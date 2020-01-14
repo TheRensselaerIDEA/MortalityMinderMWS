@@ -1,0 +1,62 @@
+.geo{
+  float:left;
+}
+
+.state {
+  stroke: #fff;
+  stroke-width:0.5px;
+  fill-opacity:#f7f7f7;
+}
+
+.stateoverlay {
+  fill: transparent;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.state:hover {
+    fill: orange;
+  }
+
+.d3map{
+  width:100%;
+  height:100%;
+}
+
+
+.explore_but {
+  margin-left:0%;
+}
+
+
+.tooltip { 
+          position: absolute;     
+          text-align: center;     
+          width: 80px;          
+          height: 14px;         
+          padding: 2px;         
+          background: #fff; 
+          border: 0px;        
+          pointer-events: none;     
+}
+
+.landing_page_map{
+  display:center;
+}
+
+#play {
+
+}
+#clock {
+	left: 65px;
+}
+
+.ul_period {
+  list-style-type: none;
+  margin: 0;
+  display: flex; 
+  overflow: hidden;
+}
+
+
+
