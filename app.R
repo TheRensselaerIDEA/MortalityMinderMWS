@@ -39,7 +39,9 @@ n.clusters.state = 3
 n.clusters.nation = 6
 jscode <- "shinyjs.nextpage = function(){$('.fp-next').click();}"
 
-ui <- fluidPage(
+ui_list <- list()
+
+ui_list[["Page1"]] <- fluidPage(
 
 ##################### CSS Imports #####################  
 
@@ -226,9 +228,68 @@ ui <- fluidPage(
                 ) #Close Column 2
               ) #Close Outter Row (National Map Page)
 
-      ), # Close div tag "slide"
+      ) # Close div tag "slide"
+    )
+  )
+)
+ui_list[["Page2"]] <- fluidPage(
+
+  ##################### CSS Imports #####################  
+  
+  useShinyjs(),
+  extendShinyjs(text = jscode, functions = c("nextpage")),
+  tags$head(includeCSS("custom_no_scroll.css")),
+  tags$head(includeCSS("jquery-ui.min.css")),
+  tags$head(includeCSS("fullpage.css")),
+  tags$head(includeCSS("geoattr.css")),
+  tags$head(
+    tags$script(src="jquery-3.4.1.min.js"),
+    tags$script("$.noConflict(true);")),
+  
+  ##################### NAV BAR #####################
+  tags$div(
+    class = "navbar",
+    
+    tags$div(
+      class = "title",
+      tags$h1(
+        "MortalityMinder")
+    ),
+    tags$div(
+      class = "input",
+      tags$h3(id = "input_text2", "State:"),
+      pickerInput(
+        inputId = "state_choice",
+        label = h4("State"), 
+        choices = state.list,
+        selected = "OH",
+        options = list(
+          `live-search` = TRUE,
+          "dropup-auto" = FALSE
+        )      
+      ),
+      tags$h3(id = "input_text1", "Cause of Death:"),
+      pickerInput(
+        inputId = "death_cause",
+        label = h4("Cause of Death"),
+        choices = cause.list,
+        selected = "Despair",
+        choicesOpt = list(
+          subtext = c(" "," "," ","Self-Harm and some other causes"),
+          "dropup-auto" = FALSE
+        )
+      ),
+      tags$script(src = "jquery-ui.min.js"),
+      tags$script(src = "fullpage.js"),
+      tags$script(src = "jquery.ba-outside-events.js"),
+      includeScript(path = "myscript.js")
       
+    ),
+    
+  
 ##################### PAGE 2, INDIVIDUAL STATE ANALYSIS #####################
+
+
 
       tags$div(
         class = "slide",
@@ -310,7 +371,68 @@ ui <- fluidPage(
                   ) # End of Column 2
                 )# End of FluidRow (Page1, State Analysis) 
       ), # End of slide div tag
+    tags$script(src = "jquery-ui.min.js"),
+    tags$script(src = "fullpage.js"),
+    tags$script(src = "jquery.ba-outside-events.js"),
+    includeScript(path = "myscript.js")
 
+  )
+)
+
+
+ui_list[["Page3"]] <- fluidPage(
+  ##################### CSS Imports #####################  
+  
+  useShinyjs(),
+  extendShinyjs(text = jscode, functions = c("nextpage")),
+  tags$head(includeCSS("custom_no_scroll.css")),
+  tags$head(includeCSS("jquery-ui.min.css")),
+  tags$head(includeCSS("fullpage.css")),
+  tags$head(includeCSS("geoattr.css")),
+  tags$head(
+    tags$script(src="jquery-3.4.1.min.js"),
+    tags$script("$.noConflict(true);")),
+  
+  ##################### NAV BAR #####################
+  tags$div(
+    class = "navbar",
+    
+    tags$div(
+      class = "title",
+      tags$h1(
+        "MortalityMinder")
+    ),
+    tags$div(
+      class = "input",
+      tags$h3(id = "input_text2", "State:"),
+      pickerInput(
+        inputId = "state_choice",
+        label = h4("State"), 
+        choices = state.list,
+        selected = "OH",
+        options = list(
+          `live-search` = TRUE,
+          "dropup-auto" = FALSE
+        )      
+      ),
+      tags$h3(id = "input_text1", "Cause of Death:"),
+      pickerInput(
+        inputId = "death_cause",
+        label = h4("Cause of Death"),
+        choices = cause.list,
+        selected = "Despair",
+        choicesOpt = list(
+          subtext = c(" "," "," ","Self-Harm and some other causes"),
+          "dropup-auto" = FALSE
+        )
+      ),
+      tags$script(src = "jquery-ui.min.js"),
+      tags$script(src = "fullpage.js"),
+      tags$script(src = "jquery.ba-outside-events.js"),
+      includeScript(path = "myscript.js")
+      
+    ),
+  
 ##################### PAGE 3, INDIVIDUAL DETERMINANT ANALYSIS #####################
       
       tags$div(
@@ -415,6 +537,66 @@ ui <- fluidPage(
            # End of Column 3
                 ) # End of Fluid Row
       ), # End of Page 3
+    tags$script(src = "jquery-ui.min.js"),
+    tags$script(src = "fullpage.js"),
+    tags$script(src = "jquery.ba-outside-events.js"),
+    includeScript(path = "myscript.js")
+  )
+)
+
+ui_list[["Page4"]] <- fluidPage(
+  
+  ##################### CSS Imports #####################  
+  
+  useShinyjs(),
+  extendShinyjs(text = jscode, functions = c("nextpage")),
+  tags$head(includeCSS("custom_no_scroll.css")),
+  tags$head(includeCSS("jquery-ui.min.css")),
+  tags$head(includeCSS("fullpage.css")),
+  tags$head(includeCSS("geoattr.css")),
+  tags$head(
+    tags$script(src="jquery-3.4.1.min.js"),
+    tags$script("$.noConflict(true);")),
+  
+  ##################### NAV BAR #####################
+  tags$div(
+    class = "navbar",
+    
+    tags$div(
+      class = "title",
+      tags$h1(
+        "MortalityMinder")
+    ),
+    tags$div(
+      class = "input",
+      tags$h3(id = "input_text2", "State:"),
+      pickerInput(
+        inputId = "state_choice",
+        label = h4("State"), 
+        choices = state.list,
+        selected = "OH",
+        options = list(
+          `live-search` = TRUE,
+          "dropup-auto" = FALSE
+        )      
+      ),
+      tags$h3(id = "input_text1", "Cause of Death:"),
+      pickerInput(
+        inputId = "death_cause",
+        label = h4("Cause of Death"),
+        choices = cause.list,
+        selected = "Despair",
+        choicesOpt = list(
+          subtext = c(" "," "," ","Self-Harm and some other causes"),
+          "dropup-auto" = FALSE
+        )
+      ),
+      tags$script(src = "jquery-ui.min.js"),
+      tags$script(src = "fullpage.js"),
+      tags$script(src = "jquery.ba-outside-events.js"),
+      includeScript(path = "myscript.js")
+      
+    ),
 ##################### PAGE 4, ABOUT PAGE #####################
 
       tags$div(
@@ -556,14 +738,12 @@ ui <- fluidPage(
                     # Close inner fluidRow
           )
         ) # Close outter fluidRow
-        ) # Close Page 4
-    ),
+      ), # Close Page 4
   tags$script(src = "jquery-ui.min.js"),
   tags$script(src = "fullpage.js"),
   tags$script(src = "jquery.ba-outside-events.js"),
   includeScript(path = "myscript.js")
   )
-
 
 
 ##################### Server Code #####################
@@ -3062,5 +3242,7 @@ server <- function(input, output, session) {
   })
 }
 
-shinyApp(ui = ui, server = server)
-
+#shinyApp(ui = ui, server = server)
+ serv_out <- list()
+ serv_calc <- list()
+ mwsApp(ui_list, serv_calc, serv_out)
