@@ -79,7 +79,7 @@ ui_list[["Page1"]] <- fluidPage(
       ),
       tags$h3(id = "input_text1", "Cause of Death:"),
       pickerInput(
-        inputId = "death_cause",
+        inputId = "p1_death_cause",
         label = h4("Cause of Death"),
         choices = cause.list,
         selected = "Despair",
@@ -270,7 +270,7 @@ ui_list[["Page2"]] <- fluidPage(
       ),
       tags$h3(id = "input_text1", "Cause of Death:"),
       pickerInput(
-        inputId = "death_cause",
+        inputId = "p2_death_cause",
         label = h4("Cause of Death"),
         choices = cause.list,
         selected = "Despair",
@@ -417,7 +417,7 @@ ui_list[["Page3"]] <- fluidPage(
       ),
       tags$h3(id = "input_text1", "Cause of Death:"),
       pickerInput(
-        inputId = "death_cause",
+        inputId = "p3_death_cause",
         label = h4("Cause of Death"),
         choices = cause.list,
         selected = "Despair",
@@ -582,7 +582,7 @@ ui_list[["Page4"]] <- fluidPage(
       ),
       tags$h3(id = "input_text1", "Cause of Death:"),
       pickerInput(
-        inputId = "death_cause",
+        inputId = "p4_death_cause",
         label = h4("Cause of Death"),
         choices = cause.list,
         selected = "Despair",
@@ -752,9 +752,9 @@ ui_list[["Page4"]] <- fluidPage(
 
 serv_calc <- list()
 
-# This calc is for synchronizing the nav bar selection across pages as well as
-# create a universal state_choice value. Each observeEvent checks for a picker
-# to change, then it updates each other page's picker
+# This calc is for synchronizing the state nav bar selection across pages as
+# well as create a universal state_choice value. Each observeEvent checks for
+# a picker to change, then it updates each other page's picker
 serv_calc[[1]] <- function(calc, session) {
   observeEvent(calc$p1_state_choice, {
     updatePickerInput(session,"p1_state_choice", select = calc$p1_state_choice)
@@ -783,6 +783,39 @@ serv_calc[[1]] <- function(calc, session) {
     updatePickerInput(session, "p1_state_choice", select = calc$state_choice)
     updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
     updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
+  })
+  
+  
+}
+
+serv_calc[[2]] <- function(calc, session) {
+  observeEvent(calc$p1_death_cause, {
+    updatePickerInput(session,"p1_death_cause", select = calc$p1_death_cause)
+    calc$death_cause <- calc$p1_death_cause
+    updatePickerInput(session, "p2_death_cause", select = calc$death_cause)
+    updatePickerInput(session, "p3_death_cause", select = calc$death_cause)
+    updatePickerInput(session, "p4_death_cause", select = calc$death_cause)
+  })
+  observeEvent(calc$p2_death_cause, {
+    updatePickerInput(session,"p2_death_cause", select = calc$p2_death_cause)
+    calc$death_cause <- calc$p2_death_cause
+    updatePickerInput(session, "p1_death_cause", select = calc$death_cause)
+    updatePickerInput(session, "p3_death_cause", select = calc$death_cause)
+    updatePickerInput(session, "p4_death_cause", select = calc$death_cause)
+  })
+  observeEvent(calc$p3_death_cause, {
+    updatePickerInput(session,"p3_death_cause", select = calc$p3_death_cause)
+    calc$death_cause <- calc$p3_death_cause
+    updatePickerInput(session, "p1_death_cause", select = calc$death_cause)
+    updatePickerInput(session, "p2_death_cause", select = calc$death_cause)
+    updatePickerInput(session, "p4_death_cause", select = calc$death_cause)
+  })
+  observeEvent(calc$p4_death_cause, {
+    updatePickerInput(session,"p4_death_cause", select = calc$p4_death_cause)
+    calc$death_cause <- calc$p4_death_cause
+    updatePickerInput(session, "p1_death_cause", select = calc$death_cause)
+    updatePickerInput(session, "p2_death_cause", select = calc$death_cause)
+    updatePickerInput(session, "p3_death_cause", select = calc$death_cause)
   })
   
   
