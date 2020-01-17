@@ -34,7 +34,7 @@ LIBS_ANALYSIS <- c(
 LIBS_SHINYAPP <- c(
   "shiny", "shinythemes", "shinyWidgets", "shinydashboard", 
   "r2d3", "RColorBrewer", "viridis", "shinyjs", "grid",
-  "htmltools"
+  "htmltools", "mwshiny"
 )
 
 # All libraries for plotting should be listed below
