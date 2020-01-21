@@ -137,7 +137,7 @@ ui_list[["Page1"]] <- fluidPage(
                    src="RPIlogo.png",
                    alt = "Institute of Data Exploration and Applications")
                  
-                 ), # End Column 1
+          ), # End Column 1
           tags$div(
             class = "vl"
           ),
@@ -226,7 +226,7 @@ ui_list[["Page1"]] <- fluidPage(
           ) #Close Column 2
         ) #Close Outter Row (National Map Page)
         
-    ) # Close div tag "slide"
+      ) # Close div tag "slide"
     )
   )
 )
@@ -755,32 +755,28 @@ serv_calc <- list()
 # a picker to change, then it updates each other page's picker
 serv_calc[[1]] <- function(calc, session) {
   observeEvent(calc$p1_state_choice, {
-    updatePickerInput(session,"p1_state_choice", select = calc$p1_state_choice)
     calc$state_choice <- calc$p1_state_choice
-    updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
-    updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
-    updatePickerInput(session, "p4_state_choice", select = calc$state_choice)
+
   })
   observeEvent(calc$p2_state_choice, {
-    updatePickerInput(session,"p2_state_choice", select = calc$p2_state_choice)
     calc$state_choice <- calc$p2_state_choice
-    updatePickerInput(session, "p1_state_choice", select = calc$state_choice)
-    updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
-    updatePickerInput(session, "p4_state_choice", select = calc$state_choice)
+   
   })
   observeEvent(calc$p3_state_choice, {
-    updatePickerInput(session,"p3_state_choice", select = calc$p3_state_choice)
     calc$state_choice <- calc$p3_state_choice
-    updatePickerInput(session, "p1_state_choice", select = calc$state_choice)
-    updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
-    updatePickerInput(session, "p4_state_choice", select = calc$state_choice)
+    
   })
   observeEvent(calc$p4_state_choice, {
-    updatePickerInput(session,"p4_state_choice", select = calc$p4_state_choice)
     calc$state_choice <- calc$p4_state_choice
-    updatePickerInput(session, "p1_state_choice", select = calc$state_choice)
+    
+  })
+  
+  observe({
+    calc$state_choice
+    updatePickerInput(session,"p1_state_choice", select = calc$state_choice)
     updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
     updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
+    updatePickerInput(session, "p4_state_choice", select = calc$state_choice)
   })
   
   
@@ -788,32 +784,28 @@ serv_calc[[1]] <- function(calc, session) {
 
 serv_calc[[2]] <- function(calc, session) {
   observeEvent(calc$p1_death_cause, {
-    updatePickerInput(session,"p1_death_cause", select = calc$p1_death_cause)
     calc$death_cause <- calc$p1_death_cause
-    updatePickerInput(session, "p2_death_cause", select = calc$death_cause)
-    updatePickerInput(session, "p3_death_cause", select = calc$death_cause)
-    updatePickerInput(session, "p4_death_cause", select = calc$death_cause)
+    
   })
   observeEvent(calc$p2_death_cause, {
-    updatePickerInput(session,"p2_death_cause", select = calc$p2_death_cause)
     calc$death_cause <- calc$p2_death_cause
-    updatePickerInput(session, "p1_death_cause", select = calc$death_cause)
-    updatePickerInput(session, "p3_death_cause", select = calc$death_cause)
-    updatePickerInput(session, "p4_death_cause", select = calc$death_cause)
+    
   })
   observeEvent(calc$p3_death_cause, {
-    updatePickerInput(session,"p3_death_cause", select = calc$p3_death_cause)
     calc$death_cause <- calc$p3_death_cause
-    updatePickerInput(session, "p1_death_cause", select = calc$death_cause)
-    updatePickerInput(session, "p2_death_cause", select = calc$death_cause)
-    updatePickerInput(session, "p4_death_cause", select = calc$death_cause)
+    
   })
   observeEvent(calc$p4_death_cause, {
-    updatePickerInput(session,"p4_death_cause", select = calc$p4_death_cause)
     calc$death_cause <- calc$p4_death_cause
-    updatePickerInput(session, "p1_death_cause", select = calc$death_cause)
+    
+  })
+  
+  observe({
+    calc$state_choice
+    updatePickerInput(session,"p1_death_cause", select = calc$death_cause)
     updatePickerInput(session, "p2_death_cause", select = calc$death_cause)
     updatePickerInput(session, "p3_death_cause", select = calc$death_cause)
+    updatePickerInput(session, "p4_death_cause", select = calc$death_cause)
   })
   
   
@@ -833,7 +825,7 @@ serv_out[["page1_main_header"]] <- function(calc, session) {
                names(which(state.list == calc$state_choice)), "?")
       )
     }
-
+    
   })
 }
 
@@ -867,13 +859,13 @@ serv_out[["page3_main_header"]] <- function(calc, session) {
 serv_out[["textDescription"]] <- function(calc, session) {
   renderUI({
     # We reference state.list, cause.list and cause.definitions defined above
-
+    
     tagList(
       tags$h5(paste0(names(which(cause.definitions == calc$death_cause)))),
       HTML("<h5>In this analysis, counties that share similar midlife mortality rate trends are categorized into <b>risk groups</b>.</h5>"),
       HTML("<h5>The <b>upper map</b> to the right shows the <b>midlife mortality rates</b> of the counties over time. The <b>lower map</b> on the left shows the <b>risk group</b> of each county. The <b>line graph</b> below compares the average mortality rates per year for each risk group  with the national mean (blue)."),
       HTML("<h5><b>Darker colors</b> indicate increased midlife mortality risk. <b>Hover</b> to see information and definitions. <b>Click on maps</b> to see county names and mortality rates. <b>Zoom maps</b> with buttons or mouse."),
-       NULL
+      NULL
     )
   })
 }
@@ -881,7 +873,7 @@ serv_out[["textDescription"]] <- function(calc, session) {
 serv_out[["textMortFactsTitle"]] <- function(calc, session) {
   renderUI({
     # We reference state.list, cause.list and cause.definitions defined above
-
+    
     if(calc$state_choice == "United States") {
       location_str <- "the United States"
     }
@@ -908,18 +900,18 @@ serv_out[["determinant_text"]] <- function(calc, session) {
         SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Reason"
       )
     }
-
+    
     tagList(
       tags$h3(
         paste0("DEFINITION: ", as.character(
           SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Definitions")
-      )),
+        )),
       tags$h5(paste0("EXPLANATION: ",reason_text))
     )
   })
 }
 
-   #Extracting the national mean
+#Extracting the national mean
 serv_calc[[3]] <- function(calc, session) {
   calc$determinant.url <- reactive({
     return(as.character(
@@ -947,7 +939,7 @@ serv_calc[[4]] <- function(calc, session) {
     return(as.character(
       SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Source"))
   })
-
+  
   calc$determinant.source_url <- reactive({
     return(as.character(
       SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Source_url"))
