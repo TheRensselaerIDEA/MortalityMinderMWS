@@ -1629,6 +1629,7 @@
 #     }
 #   })
 # 
+<<<<<<< HEAD
 #   # Death Trends Header (Page 2 lower middle)
 #   output$textDeathTrends <- renderUI({
 #     # We reference state.list, cause.list and cause.definitions defined above
@@ -1855,6 +1856,8 @@
 #       NULL
 #     )
 #   })
+=======
+>>>>>>> 419798cad48e8e199721519815a56e3b10309e57
 #   
 #   
 #   # Mortality Rate Table
