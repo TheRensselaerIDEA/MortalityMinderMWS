@@ -72,11 +72,11 @@ ui_list[["Page1"]] <- fluidPage(
         label = h4("State"), 
         choices = state.list,
         selected = NULL,
-        #multiple = TRUE,
+        multiple = TRUE,
         options = list(
           `live-search` = TRUE,
-          "dropup-auto" = FALSE
-          #'maxOptions' = 1
+          "dropup-auto" = FALSE,
+          `max-options` = 1
         )      
       ),
       tags$h3(id = "input_text1", "Cause of Death:"),
@@ -263,11 +263,11 @@ ui_list[["Page2"]] <- fluidPage(
         label = h4("State"), 
         choices = state.list,
         selected = NULL,
-        #multiple = TRUE,
+        multiple = TRUE,
         options = list(
           `live-search` = TRUE,
-          "dropup-auto" = FALSE
-          #'maxOptions' = 1
+          "dropup-auto" = FALSE,
+          `max-options` = 1
         )      
       ),
       tags$h3(id = "input_text1", "Cause of Death:"),
@@ -412,11 +412,11 @@ ui_list[["Page3"]] <- fluidPage(
         label = h4("State"), 
         choices = state.list,
         selected = NULL,
-        #multiple = TRUE,
+        multiple = TRUE,
         options = list(
           `live-search` = TRUE,
-          "dropup-auto" = FALSE
-          #'maxOptions' = 1
+          "dropup-auto" = FALSE,
+          `max-options` = 1
         )      
       ),
       tags$h3(id = "input_text1", "Cause of Death:"),
@@ -579,11 +579,11 @@ ui_list[["Page4"]] <- fluidPage(
         label = h4("State"), 
         choices = state.list,
         selected = NULL,
-        #multiple = TRUE,
+        multiple = TRUE,
         options = list(
           `live-search` = TRUE,
-          "dropup-auto" = FALSE
-          #'maxOptions' = 1
+          "dropup-auto" = FALSE,
+          `max-options` = 1
         )      
       ),
       tags$h3(id = "input_text1", "Cause of Death:"),
@@ -762,35 +762,25 @@ serv_calc <- list()
 # well as create a universal state_choice value. Each observeEvent checks for
 # a picker to change, then it updates each other page's picker
 serv_calc[[1]] <- function(calc, session) {
-  calc$state_choice <- "OH"
-  if (is.null(calc$p1_state_choice)) {
-    calc$p1_state_choice <- calc$state_choice
-  }
-  if (is.null(calc$p2_state_choice)) {
-    calc$p2_state_choice <- calc$state_choice
-  }
-  if (is.null(calc$p3_state_choice)) {
-    calc$p3_state_choice <- calc$state_choice
-  }
-  if (is.null(calc$p4_state_choice)) {
-    calc$p4_state_choice <- calc$state_choice
-  }
-  
+  # if(calc$state_choice == "OH") {
+  #   calc$state_choice <- "OH"
+  #   
+  #  }
+}  
+
+serv_calc[[2]] <- function(calc, session) {
   observeEvent(calc$p1_state_choice, {
     calc$state_choice <- calc$p1_state_choice
-    
+
   })
   observeEvent(calc$p2_state_choice, {
-    calc$state_choice <- calc$p2_state_choice
-    
+   calc$state_choice <- calc$p2_state_choice
   })
   observeEvent(calc$p3_state_choice, {
     calc$state_choice <- calc$p3_state_choice
-    
   })
   observeEvent(calc$p4_state_choice, {
     calc$state_choice <- calc$p4_state_choice
-    
   })
   
   observe({
@@ -799,12 +789,13 @@ serv_calc[[1]] <- function(calc, session) {
     updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
     updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
     updatePickerInput(session, "p4_state_choice", select = calc$state_choice)
+    
   })
   
   
 }
 
-serv_calc[[2]] <- function(calc, session) {
+serv_calc[[3]] <- function(calc, session) {
   observeEvent(calc$p1_death_cause, {
     calc$death_cause <- calc$p1_death_cause
     
@@ -934,7 +925,7 @@ serv_out[["determinant_text"]] <- function(calc, session) {
 }
 
 #Extracting the national mean
-serv_calc[[3]] <- function(calc, session) {
+serv_calc[[4]] <- function(calc, session) {
   calc$determinant.url <- reactive({
     return(as.character(
       SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"URL"))
@@ -956,7 +947,7 @@ serv_out[["determinant_link"]] <- function(calc, session) {
   })
 }
 
-serv_calc[[4]] <- function(calc, session) {
+serv_calc[[5]] <- function(calc, session) {
   calc$determinant.source <- reactive({
     return(as.character(
       SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Source"))

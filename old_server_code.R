@@ -1,3 +1,7 @@
+# This code contains the nonfunctional server code from the original MM app. I am keeping
+# it in a seperate file to keep app.R clean and speed up RStudio runtime
+
+
 
 # server <- function(input, output, session) {
 #
