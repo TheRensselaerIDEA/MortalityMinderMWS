@@ -762,19 +762,18 @@ serv_calc <- list()
 # well as create a universal state_choice value. Each observeEvent checks for
 # a picker to change, then it updates each other page's picker
 serv_calc[[1]] <- function(calc, session) {
-  # if(calc$state_choice == "OH") {
+  # if(!exists("calc$state_choice")) {
   #   calc$state_choice <- "OH"
-  #   
   #  }
 }  
 
 serv_calc[[2]] <- function(calc, session) {
   observeEvent(calc$p1_state_choice, {
     calc$state_choice <- calc$p1_state_choice
-
+    
   })
   observeEvent(calc$p2_state_choice, {
-   calc$state_choice <- calc$p2_state_choice
+    calc$state_choice <- calc$p2_state_choice
   })
   observeEvent(calc$p3_state_choice, {
     calc$state_choice <- calc$p3_state_choice
@@ -783,8 +782,7 @@ serv_calc[[2]] <- function(calc, session) {
     calc$state_choice <- calc$p4_state_choice
   })
   
-  observe({
-    calc$state_choice
+  observeEvent(calc$state_choice,{
     updatePickerInput(session,"p1_state_choice", select = calc$state_choice)
     updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
     updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
