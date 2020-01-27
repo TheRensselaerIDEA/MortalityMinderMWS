@@ -71,7 +71,7 @@ ui_list[["Page1"]] <- fluidPage(
         inputId = "p1_state_choice",
         label = h4("State"), 
         choices = state.list,
-        selected = NULL,
+        selected = "OH",
         multiple = TRUE,
         options = list(
           `live-search` = TRUE,
@@ -812,7 +812,7 @@ serv_calc[[3]] <- function(calc, session) {
   })
   
   observe({
-    calc$state_choice
+    #calc$state_choice
     updatePickerInput(session,"p1_death_cause", select = calc$death_cause)
     updatePickerInput(session, "p2_death_cause", select = calc$death_cause)
     updatePickerInput(session, "p3_death_cause", select = calc$death_cause)
@@ -821,6 +821,84 @@ serv_calc[[3]] <- function(calc, session) {
   
   
 }
+
+#Extracting the national mean
+serv_calc[[4]] <- function(calc, session) {
+  calc$determinant.url <- reactive({
+    return(as.character(
+      SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"URL"))
+  })
+}
+
+
+serv_calc[[5]] <- function(calc, session) {
+  calc$determinant.source <- reactive({
+    return(as.character(
+      SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Source"))
+  })
+  
+  calc$determinant.source_url <- reactive({
+    return(as.character(
+      SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Source_url"))
+  })
+}
+
+serv_calc[[6]] <- function(calc, session) {
+  calc$county_choice <- reactiveVal()
+}
+serv_calc[[7]] <- function(calc, session) {
+  calc$mort.rate <- reactive({
+    calc$county_choice(NULL)
+    assign("county_polygon", NULL, envir = .GlobalEnv)
+    assign("page1_period_choice", 6, envir = .GlobalEnv)
+    if(calc$state_choice == "United States"){
+      cdc.data %>% dplyr::filter(
+        death_cause == calc$death_cause,
+        #state_abbr == input$state_choice,
+        period == "2015-2017"
+      ) %>%
+        dplyr::mutate(
+          # death_rate = death_num / population * 10^5
+          #death_rate = cut(death_rate, bin.geo.mort("Despair"))
+        ) %>%
+        dplyr::select(county_fips, death_rate)
+    }else {
+      assign("state_map", readRDS(paste("../shape_files/", calc$state_choice, ".Rds", sep = "")), envir = .GlobalEnv)
+      cdc.data %>% dplyr::filter(
+        death_cause == calc$death_cause,
+        state_abbr == calc$state_choice,
+        period == "2015-2017"
+      ) %>%
+        dplyr::mutate(
+          # death_rate = death_num / population * 10^5
+          #death_rate = cut(death_rate, bin.geo.mort("Despair"))
+        ) %>%
+        dplyr::select(county_fips, death_rate)
+    }
+  })
+}
+
+
+# get unfiltered kendal cors
+serv_calc[[8]] <- function(calc, session) {
+  calc$kendall.cor <- reactive({
+    
+    calc$kendall.cor.new <- calc$mort.rate() %>%
+      dplyr::mutate(VAR = death_rate) %>%
+      kendall.func(chr.data.2019) %>%
+      dplyr::mutate(
+        DIR = dplyr::if_else(
+          kendall_cor <= 0,
+          "Protective",
+          "Destructive"
+        ),
+        chr_code = chr.namemap.2019[chr_code, 1]
+      ) %>% na.omit()
+    
+  })
+}
+
+
 
 serv_out <- list()
 
@@ -922,13 +1000,6 @@ serv_out[["determinant_text"]] <- function(calc, session) {
   })
 }
 
-#Extracting the national mean
-serv_calc[[4]] <- function(calc, session) {
-  calc$determinant.url <- reactive({
-    return(as.character(
-      SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"URL"))
-  })
-}
 
 serv_out[["determinant_link"]] <- function(calc, session) {
   renderUI({
@@ -945,17 +1016,7 @@ serv_out[["determinant_link"]] <- function(calc, session) {
   })
 }
 
-serv_calc[[5]] <- function(calc, session) {
-  calc$determinant.source <- reactive({
-    return(as.character(
-      SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Source"))
-  })
-  
-  calc$determinant.source_url <- reactive({
-    return(as.character(
-      SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Source_url"))
-  })
-}
+
 
 serv_out[["determinant_original_source"]] <- function(calc, session) {
   renderUI({
@@ -971,86 +1032,231 @@ serv_out[["determinant_original_source"]] <- function(calc, session) {
     )
   })
 }
+
+
+# Mortality Rates Header (Page 2 lower middle)
+serv_out[["textMortRates"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    if(calc$state_choice == "United States") {
+      location_str <- "the United States"
+      tagList(tags$h3(
+        title="This plot represents the distribution of midlife mortality rates (ages 25-64) for the selected state.",
+        paste0(names(which(cause.list == calc$death_cause)), " Midlife Mortality Rates for ",
+               location_str, " for ", calc$year_selector)
+        # , icon("info-circle")
+      ),
+      tags$h6("The geographic distribution of midlife mortality rates (ages 25-64) for ",paste(location_str,".",sep = "")),
+      NULL
+      )
+    }
+    else {
+      tagList(
+        tags$h3(
+          title="This plot represents the distribution of midlife mortality rates (ages 25-64) for the selected state.",
+          # paste0("State View: ",names(which(cause.list == input$death_cause)), " Midlife Mortality Rates for ", names(which(state.list == input$state_choice))," for ",input$year_selector)
+          paste0(names(which(cause.list == calc$death_cause)), " Midlife Mortality Rates for ", names(which(state.list == calc$state_choice))," for ",calc$year_selector)
+        ),
+        tags$h6("The geographic distribution of midlife mortality rates (ages 25-64) for ",paste(names(which(state.list == calc$state_choice)),".",sep="")),
+        NULL
+      )
+    }
+  })
+}
+
+# Death Trends Header (Page 2 lower middle)
+serv_out[["textDeathTrends"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    if(calc$state_choice == "United States") {
+      location_str <- "the United States"
+      tagList(
+        tags$h3(
+          title="This plot represents the average midlife death trends for each risk group. The blue line represents the national average.  Click on a map to see the line for a specific county. If a state has 6 or fewer counties, the average for each county is shown.",
+          paste0(names(which(cause.list == calc$death_cause)), " Trends for Risk Groups across ", location_str)
+          # , icon("info-circle")
+        ),
+        tags$h6("The average midlife death trends for each risk group conpared with the national average (in blue)."),
+        NULL
+      )
+    }
+    else {
+      tagList(
+        tags$h3(
+          title="This plot represents the average midlife death trends for each risk group. The blue line represents the national average.  Click on a map to see the line for a specific county. If a state has 6 or fewer counties, the average for each county is shown.",
+          paste0(names(which(cause.list == calc$death_cause)), " Trends for Risk Groups across ", names(which(state.list == calc$state_choice)))
+          # , icon("info-circle")
+        ),
+        tags$h6("The average midlife death trends for each risk group compared with the national average (in blue). Click on any map to see the trend for a specific county."),
+        NULL
+      )
+    }
+  })
+}
+
 # 
-# serv_calc[[5]] <- function(calc, session) {
-#   calc$county_choice <- reactiveVal()
-# }
+
+# 
+serv_out[["determinant_corr"]] <-function(calc, session) {
+  renderText({
+    if (nrow(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]) == 0) {
+      return("")
+    }
+
+    if (calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$kendall_cor >= 0) {
+      return(paste0("Kendall Correlation with ",
+                    calc$death_cause,
+                    " mortality: <span style=\"color:	#f8766d\"> <strong> ",
+                    round(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$kendall_cor, 4),
+                    "</strong> </span>"))
+    }
+    else {
+      return(paste0("Kendal Correlation with ",
+                    calc$death_cause,
+                    " mortality: <span style=\"color: #00bfc4\"> <strong>",
+                    round(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$kendall_cor, 4),
+                    "</strong> </span>"))
+    }
+  })
+}
+
+serv_out[["determinant_dir"]] <-function(calc, session) {
+  renderText({
+    if (nrow(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]) == 0) {
+      return("")
+    }
+    
+    if (calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$kendall_p > .05) {
+      return(paste0("<strong>No</strong> statistically significant ",
+                    " relationship with mortality (p-value = ",
+                    signif(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$kendall_p, 2),
+                    ")"))
+    }
+    else if (calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$kendall_cor >= 0) {
+      return(paste0("Statistically significant <strong> <span style=\"color:	#f8766d\">",
+                    tolower(as.character(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$DIR)),
+                    "</span> </strong> relationship with mortality (p-value = ",
+                    signif(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$kendall_p, 2),
+                    ")"))
+    }
+    else {
+      return(paste0("Statistically significant <strong> <span style=\"color:	#00bfc4\">",
+                    tolower(as.character(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$DIR)),
+                    "</span> </strong> relationship with mortality (p-value = ",
+                    signif(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$kendall_p, 2),
+                    ")"))
+    }
+  })
+}
+
+
 # 
 # 
-# serv_calc[[6]] <-function(calc, session) {
-#   calc$mort.rate <- reactive({
-#     calc$county_choice(NULL)
-#     assign("county_polygon", NULL, envir = .GlobalEnv)
-#     assign("page1_period_choice", 6, envir = .GlobalEnv)
-#     if(calc$state_choice == "United States"){
-#       cdc.data %>% dplyr::filter(
-#         death_cause == calc$death_cause,
-#         #state_abbr == input$state_choice,
-#         period == "2015-2017"
-#       ) %>%
-#         dplyr::mutate(
-#           # death_rate = death_num / population * 10^5
-#           #death_rate = cut(death_rate, bin.geo.mort("Despair"))
-#         ) %>%
-#         dplyr::select(county_fips, death_rate)
-#     }else {
-#       assign("state_map", readRDS(paste("../shape_files/", calc$state_choice, ".Rds", sep = "")), envir = .GlobalEnv)
-#       cdc.data %>% dplyr::filter(
-#         death_cause == calc$death_cause,
-#         state_abbr == calc$state_choice,
-#         period == "2015-2017"
-#       ) %>%
-#         dplyr::mutate(
-#           # death_rate = death_num / population * 10^5
-#           #death_rate = cut(death_rate, bin.geo.mort("Despair"))
-#         ) %>%
-#         dplyr::select(county_fips, death_rate)
-#     }
+#   #Extracting the national mean
+# serv_calc[[8]] <- function(calc, session) {
+#   national.mean <- reactive({
+#     switch(calc$death_cause,
+#            "Despair" = {
+#              death_rate <- c(28.929453, 33.665595, 37.821445, 40.081486, 43.900063, 55.084642)
+#            },
+#            "Assault" = {
+#              death_rate <- c(6.750937, 6.729051, 6.687417, 5.934990, 5.915201, 6.999898)
+#            },
+#            "Cancer" = {
+#              death_rate <- c(107.637100, 107.638200, 106.628310, 106.949100, 105.219690, 101.169700)
+#            },
+#            "Cardiovascular" = {
+#              death_rate <- c(96.830591, 95.807343, 92.915303, 90.702418, 91.232679, 93.598232)
+#            },
+#            "All Cause" = {
+#              death_rate <- c(366.07178, 373.10366, 373.65807, 373.40143, 379.60383, 395.93077)
+#            })
+# 
+# 
+#     nation.dataframe <- data.frame(
+#       period = c("2000-2002", "2003-2005", "2006-2008", "2009-2011", "2012-2014", "2015-2017"),
+#       cluster = rep("National", 6),
+#       death_rate,
+#       count = rep(NA, 6))
 #   })
 # }
-# 
-# 
-# # get unfiltered kendal cors
-# serv_calc[[7]] <- function(calc, session) {
-#   calc$kendall.cor <- reactive({
-# 
-#     calc$kendall.cor.new <- calc$mort.rate() %>%
-#       dplyr::mutate(VAR = death_rate) %>%
-#       kendall.func(chr.data.2019) %>%
-#       dplyr::mutate(
-#         DIR = dplyr::if_else(
-#           calc$kendall_cor <= 0,
-#           "Protective",
-#           "Destructive"
-#         ),
-#         chr_code = chr.namemap.2019[chr_code, 1]
-#       ) %>% na.omit()
-# 
-#   })
-# }
+
+# ----------------------------------------------------------------------
+#   # Functions for data download
 #   
-# serv_out[["determinant_corr"]] <-function(calc, session) {
-#   renderText({
-#     if (nrow(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]) == 0) {
-#       return("")
-#     }
-# 
-#     if (calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$calc$kendall_cor >= 0) {
-#       return(paste0("Kendall Correlation with ",
-#                     calc$death_cause,
-#                     " mortality: <span style=\"color:	#f8766d\"> <strong> ",
-#                     round(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$calc$kendall_cor, 4),
-#                     "</strong> </span>"))
-#     }
-#     else {
-#       return(paste0("Kendal Correlation with ",
-#                     calc$death_cause,
-#                     " mortality: <span style=\"color: #00bfc4\"> <strong>",
-#                     round(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$calc$kendall_cor, 4),
-#                     "</strong> </span>"))
-#     }
-#   })
-# }
+# Outputs cdc.unimputed.data as a csv
+serv_out[["downloadCDCData"]] <- function(calc, session) {
+  downloadHandler(
+    filename = function() {
+      "cdc_data.csv"
+    },
+    content = function(file) {
+      write.csv(cdc.unimputed.data, file, row.names = FALSE)
+    }
+  )
+}
+
+# Outputs chr.data.2019 as a csv
+serv_out[["downloadCHRData"]] <- function(calc, session) {
+  downloadHandler(
+    filename = function() {
+      "chr_data_2019.csv"
+    },
+    content = function(file) {
+      write.csv(chr.data.2019, file, row.names = FALSE)
+    }
+  )
+}
+
+# Outputs chr.namemap.2019 as a csv
+serv_out[["downloadFactorDesc"]] <- function(calc, session) {
+  downloadHandler(
+    filename = function() {
+      "chr_data_desc.csv"
+    },
+    content = function(file) {
+      write.csv(SocialDeterminants, file, row.names = FALSE)
+    }
+  )
+}
+
+# Outputs mort.cluster.ord as a csv
+serv_out[["downloadClusters"]] <- function(calc, session) {
+  downloadHandler(
+    filename = function() {
+      paste0(calc$state_choice, "_", calc$death_cause, "_clusters.csv")
+    },
+    content = function(file) {
+      write.csv( mort.cluster.ord(), file, row.names = FALSE)
+    }
+  )
+}
+
+# Outputs mort.avg.cluster.ord as a csv
+serv_out[["downloadClusterTime"]] <- function(calc, session) {
+  downloadHandler(
+    filename = function() {
+      paste0(calc$state_choice, "_", calc$death_cause, "_clusters_time_series.csv")
+    },
+    content = function(file) {
+      write.csv( mort.avg.cluster.ord(), file, row.names = FALSE)
+    }
+  )
+}
+
+# Outputs kendall.cor as a csv
+serv_out[["downloadCorr"]] <- function(calc, session) {
+  downloadHandler(
+    filename = function() {
+      paste0(calc$state_choice, "_", calc$death_cause, "_", calc$determinant_choice , "_correlations.csv")
+    },
+    content = function(file) {
+      write.csv( kendall.cor(), file, row.names = FALSE)
+    }
+  )
+}
+
+
 
 
 mwsApp(ui_list, serv_calc, serv_out)
