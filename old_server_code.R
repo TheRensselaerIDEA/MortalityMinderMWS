@@ -265,21 +265,7 @@ server <- function(input, output, session) {
 
 
   
-  # ----------------------------------------------------------------------
-  output$county_selector <- renderUI({
-    if (input$state_choice != "United States") {
-      geo.namemap <- geo.namemap[geo.namemap$state_abbr != "HI",]
-      geo.namemap <- rbind(geo.namemap, c("Hawaii", "HI", "15", "Hawaii", "15001"), c("Hawaii", "HI", "15", "Honolulu", "15003"), c("Hawaii", "HI", "15", "Kalawao", "15005"), c("Hawaii", "HI", "15", "Kauai", "15007"), c("Hawaii", "HI", "15", "Maui", "15009"))
-      pickerInput('county_drop_choice', 
-                  'County', 
-                  geo.namemap[geo.namemap$state_abbr == input$state_choice,]$county_name,
-                  selected = NULL,
-                  multiple = TRUE,
-                  options = pickerOptions(size = 15,
-                                          maxOptions = 1)
-      )
-    }
-  })
+
   
   rv_county_drop_choice <- reactive({})
   
@@ -293,22 +279,7 @@ server <- function(input, output, session) {
   
   
   # ----------------------------------------------------------------------
-  
-  output$national_map<-renderUI({
-    if(input$death_cause == "Despair"){
-      includeScript(path = "Despair.js")
-    }
-    else if(input$death_cause == "Cancer"){
-      includeScript(path = "Cancer.js")
-    }
-    else if(input$death_cause == "Cardiovascular"){
-      includeScript(path = "Cardio.js")
-    }
-    else if(input$death_cause == "All Cause"){
-      includeScript(path = "All.js")
-    }
-  })
-  
+
   output$determinants_plot1 <- renderPlot({
     
     # Sort by kendall.cor

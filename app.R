@@ -1177,6 +1177,42 @@ serv_out[["determinant_dir"]] <-function(calc, session) {
 }
 
 
+serv_out[["county_selector"]] <- function(calc, session) {
+  renderUI({
+    if (calc$state_choice != "United States") {
+      geo.namemap <- geo.namemap[geo.namemap$state_abbr != "HI",]
+      geo.namemap <- rbind(geo.namemap, c("Hawaii", "HI", "15", "Hawaii", "15001"), c("Hawaii", "HI", "15", "Honolulu", "15003"), c("Hawaii", "HI", "15", "Kalawao", "15005"), c("Hawaii", "HI", "15", "Kauai", "15007"), c("Hawaii", "HI", "15", "Maui", "15009"))
+      pickerInput('county_drop_choice', 
+                  'County', 
+                  geo.namemap[geo.namemap$state_abbr == calc$state_choice,]$county_name,
+                  selected = NULL,
+                  multiple = TRUE,
+                  options = pickerOptions(size = 15,
+                                          maxOptions = 1)
+      )
+    }
+  })
+}
+
+
+serv_out[["national_map"]] <- function(calc, session) {
+  renderUI({
+    if(calc$death_cause == "Despair"){
+      includeScript(path = "Despair.js")
+    }
+    else if(calc$death_cause == "Cancer"){
+      includeScript(path = "Cancer.js")
+    }
+    else if(calc$death_cause == "Cardiovascular"){
+      includeScript(path = "Cardio.js")
+    }
+    else if(calc$death_cause == "All Cause"){
+      includeScript(path = "All.js")
+    }
+  })
+}
+
+
 # ----------------------------------------------------------------------
 #   # Functions for data download
 #   
