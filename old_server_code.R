@@ -119,22 +119,6 @@ server <- function(input, output, session) {
     order.cluster.deathrate.during.time(mort.avg.cluster.raw(), mort.cluster.map())
   })
   
-  # get unfiltered kendal cors
-  kendall.cor <- reactive({
-    
-    kendall.cor.new <- mort.rate() %>% 
-      dplyr::mutate(VAR = death_rate) %>%
-      kendall.func(chr.data.2019) %>%
-      dplyr::mutate(
-        DIR = dplyr::if_else(
-          kendall_cor <= 0,
-          "Protective",
-          "Destructive"
-        ),
-        chr_code = chr.namemap.2019[chr_code, 1]
-      ) %>% na.omit()
-    
-  })
   
   
   # Return the mean mortality rate for a state  for 2000-2002
@@ -278,147 +262,8 @@ server <- function(input, output, session) {
     )
   })
   
-  #Extracting the national mean
-  national.mean <- reactive({
-    switch(input$death_cause,
-           "Despair" = {
-             death_rate <- c(28.929453, 33.665595, 37.821445, 40.081486, 43.900063, 55.084642)
-           },
-           "Assault" = {
-             death_rate <- c(6.750937, 6.729051, 6.687417, 5.934990, 5.915201, 6.999898)
-           }, 
-           "Cancer" = {
-             death_rate <- c(107.637100, 107.638200, 106.628310, 106.949100, 105.219690, 101.169700)
-           },
-           "Cardiovascular" = {
-             death_rate <- c(96.830591, 95.807343, 92.915303, 90.702418, 91.232679, 93.598232)
-           },
-           "All Cause" = {
-             death_rate <- c(366.07178, 373.10366, 373.65807, 373.40143, 379.60383, 395.93077)
-           })
-    
-    
-    nation.dataframe <- data.frame(
-      period = c("2000-2002", "2003-2005", "2006-2008", "2009-2011", "2012-2014", "2015-2017"),
-      cluster = rep("National", 6),
-      death_rate,
-      count = rep(NA, 6))
-  })
-  
-  output$page1_main_header <- renderUI({
-    if (input$state_choice == "United States") {
-      tags$h3(
-        paste0("Nationwide View: What are the trends in midlife mortality rates for ", names(which(cause.list == input$death_cause)), " across the United States?")
-      )
-    } else {
-      tags$h3(
-        paste0("Nationwide View: What are the trends in midlife mortality rates for ", names(which(cause.list == input$death_cause)), " across the United States and in ", 
-               names(which(state.list == input$state_choice)), "?")
-      )
-    }
-    
-  })
-  
-  output$page2_main_header <- renderUI({
-    if (input$state_choice == "United States") {
-      location_str = "the United States"
-    } else {
-      location_str = names(which(state.list == input$state_choice))
-    }
-    tags$h3(
-      paste0("State View: How do midlife mortality rates for ", names(which(cause.list == input$death_cause)), " vary by county across ", location_str, " and why?")
-    )
-  })
-  
-  output$page3_main_header <- renderUI({
-    if (input$state_choice == "United States") {
-      location_str = "the United States"
-    } else {
-      location_str = names(which(state.list == input$state_choice))
-    }
-    tags$h3(
-      paste0("Factor View: How are county-level social and economic factors associated with midlife mortality rates for ", names(which(cause.list == input$death_cause)), " in ", location_str,"?")
-    )
-  })
-  
-  #Extracting the national mean
-  determinant.url <- reactive({
-    return(as.character(
-      SocialDeterminants[SocialDeterminants$Name == input$determinant_choice,]$"URL"))
-  })
-  
-  determinant.source <- reactive({
-    return(as.character(
-      SocialDeterminants[SocialDeterminants$Name == input$determinant_choice,]$"Source"))
-  })
-  
-  determinant.source_url <- reactive({
-    return(as.character(
-      SocialDeterminants[SocialDeterminants$Name == input$determinant_choice,]$"Source_url"))
-  })
-  
-  # ----------------------------------------------------------------------
-  # Functions for data download
-  
-  # Outputs cdc.unimputed.data as a csv
-  output$downloadCDCData <- downloadHandler(
-    filename = function() {
-      "cdc_data.csv"
-    },
-    content = function(file) {
-      write.csv(cdc.unimputed.data, file, row.names = FALSE)
-    }
-  )
-  
-  # Outputs chr.data.2019 as a csv
-  output$downloadCHRData <- downloadHandler(
-    filename = function() {
-      "chr_data_2019.csv"
-    },
-    content = function(file) {
-      write.csv(chr.data.2019, file, row.names = FALSE)
-    }
-  )
-  
-  # Outputs chr.namemap.2019 as a csv
-  output$downloadFactorDesc <- downloadHandler(
-    filename = function() {
-      "chr_data_desc.csv"
-    },
-    content = function(file) {
-      write.csv(SocialDeterminants, file, row.names = FALSE)
-    }
-  )
-  
-  # Outputs mort.cluster.ord as a csv
-  output$downloadClusters <- downloadHandler(
-    filename = function() {
-      paste0(input$state_choice, "_", input$death_cause, "_clusters.csv")
-    },
-    content = function(file) {
-      write.csv( mort.cluster.ord(), file, row.names = FALSE)
-    }
-  )
-  
-  # Outputs mort.avg.cluster.ord as a csv
-  output$downloadClusterTime <- downloadHandler(
-    filename = function() {
-      paste0(input$state_choice, "_", input$death_cause, "_clusters_time_series.csv")
-    },
-    content = function(file) {
-      write.csv( mort.avg.cluster.ord(), file, row.names = FALSE)
-    }
-  )
-  
-  # Outputs kendall.cor as a csv
-  output$downloadCorr <- downloadHandler(
-    filename = function() {
-      paste0(input$state_choice, "_", input$death_cause, "_", input$determinant_choice , "_correlations.csv")
-    },
-    content = function(file) {
-      write.csv( kendall.cor(), file, row.names = FALSE)
-    }
-  )
+
+
   
   # ----------------------------------------------------------------------
   output$county_selector <- renderUI({
@@ -871,71 +716,8 @@ server <- function(input, output, session) {
       names(which(state.list == input$state_choice))
     }
   })
-  
-  
-  output$determinant_text <- renderUI({
-    reason_text <- ""
-    if (!is.na(SocialDeterminants[SocialDeterminants$Name == input$determinant_choice,]$"Reason")) {
-      reason_text <- as.character(
-        SocialDeterminants[SocialDeterminants$Name == input$determinant_choice,]$"Reason"
-      )
-    }
-    
-    tagList(
-      tags$h3(
-        paste0("DEFINITION: ", as.character(
-          SocialDeterminants[SocialDeterminants$Name == input$determinant_choice,]$"Definitions")
-        )),
-      tags$h5(paste0("EXPLANATION: ",reason_text))
-    )
-  })
-  
-  output$determinant_link <- renderUI({
-    tagList(tags$h5(
-      "Text Source: ",
-      tags$a(
-        "County Health Rankings",
-        href = determinant.url(),
-        style = "color: #00bfc4;",
-        target="_blank"
-      )
-    )
-    )
-  })
-  
-  output$determinant_original_source <- renderUI({
-    tagList(tags$h5(
-      "Data Source: ",
-      tags$a(
-        determinant.source(),
-        href = determinant.source_url(),
-        style = "color: #00bfc4;",
-        target="_blank"
-      )
-    )
-    )
-  })
-  
-  output$determinant_corr <- renderText({
-    if (nrow(kendall.cor()[kendall.cor()$chr_code == input$determinant_choice,]) == 0) {
-      return("")
-    }
-    
-    if (kendall.cor()[kendall.cor()$chr_code == input$determinant_choice,]$kendall_cor >= 0) {
-      return(paste0("Kendall Correlation with ",
-                    input$death_cause,
-                    " mortality: <span style=\"color:	#f8766d\"> <strong> ",
-                    round(kendall.cor()[kendall.cor()$chr_code == input$determinant_choice,]$kendall_cor, 4),
-                    "</strong> </span>"))
-    }
-    else {
-      return(paste0("Kendal Correlation with ",
-                    input$death_cause,
-                    " mortality: <span style=\"color: #00bfc4\"> <strong>",
-                    round(kendall.cor()[kendall.cor()$chr_code == input$determinant_choice,]$kendall_cor, 4),
-                    "</strong> </span>"))
-    }
-  })
+
+
   
 
   
@@ -1525,41 +1307,7 @@ server <- function(input, output, session) {
     line_plot
   }, bg="transparent")
   
-  
-  # Textual description box (upper-left panel, Page 1)
-  output$textDescription <- renderUI({
-    # We reference state.list, cause.list and cause.definitions defined above
-    
-    tagList(
-      tags$h5(paste0(names(which(cause.definitions == input$death_cause)))),
-      HTML("<h5>In this analysis, counties that share similar midlife mortality rate trends are categorized into <b>risk groups</b>.</h5>"),
-      HTML("<h5>The <b>upper map</b> to the right shows the <b>midlife mortality rates</b> of the counties over time. The <b>lower map</b> on the left shows the <b>risk group</b> of each county. The <b>line graph</b> below compares the average mortality rates per year for each risk group  with the national mean (blue)."),
-      HTML("<h5><b>Darker colors</b> indicate increased midlife mortality risk. <b>Hover</b> to see information and definitions. <b>Click on maps</b> to see county names and mortality rates. <b>Zoom maps</b> with buttons or mouse."), 
-      HTML("<h5><span style='color:white'>Click <b>BACK</b></span> <b><span style='color:#00bfc4'>&lt;&lt;</span></b> <span style='color:white'>and <b>NEXT</b> </span>
-           <b><span style='color:#00bfc4'>&gt;&gt;</span></b> <span style='color:white'>or the left and right arrow keys to move between the</span> <span style='color:white'><b>Nationwide, State</b> and <b>Factor</b> views.</span></h5>"),
-      NULL
-      )
-  })
-  
-  output$textMortFactsTitle <- renderUI({
-    # We reference state.list, cause.list and cause.definitions defined above
-    
-    if(input$state_choice == "United States") {
-      location_str <- "the United States" 
-    }
-    else {
-      location_str <- names(which(state.list == input$state_choice))
-    }
-    tagList(
-      tags$h3(
-        paste0("Midlife Mortality Rates for ",
-               names(which(cause.list == input$death_cause)), 
-               " in ", 
-               location_str,
-               ":")
-      )
-    )
-  })
+
   
   output$textMortFactsNew <- renderUI({
     # We reference state.list, cause.list and cause.definitions defined above
@@ -1768,62 +1516,8 @@ server <- function(input, output, session) {
       )
     }
   })
+
   
-  # Death Trends Header (Page 2 lower middle)
-  output$textDeathTrends <- renderUI({
-    # We reference state.list, cause.list and cause.definitions defined above
-    if(input$state_choice == "United States") {
-      location_str <- "the United States" 
-      tagList(
-        tags$h3(
-          title="This plot represents the average midlife death trends for each risk group. The blue line represents the national average.  Click on a map to see the line for a specific county. If a state has 6 or fewer counties, the average for each county is shown.",
-          paste0(names(which(cause.list == input$death_cause)), " Trends for Risk Groups across ", location_str)
-          # , icon("info-circle")
-        ),
-        tags$h6("The average midlife death trends for each risk group conpared with the national average (in blue)."),
-        NULL
-      )
-    }
-    else {
-      tagList(
-        tags$h3(
-          title="This plot represents the average midlife death trends for each risk group. The blue line represents the national average.  Click on a map to see the line for a specific county. If a state has 6 or fewer counties, the average for each county is shown.",
-          paste0(names(which(cause.list == input$death_cause)), " Trends for Risk Groups across ", names(which(state.list == input$state_choice)))
-          # , icon("info-circle")
-        ),
-        tags$h6("The average midlife death trends for each risk group compared with the national average (in blue). Click on any map to see the trend for a specific county."),
-        NULL
-      )
-    }
-  })
-  
-  # Mortality Rates Header (Page 2 lower middle)
-  output$textMortRates <- renderUI({
-    # We reference state.list, cause.list and cause.definitions defined above
-    if(input$state_choice == "United States") {
-      location_str <- "the United States" 
-      tagList(tags$h3(
-        title="This plot represents the distribution of midlife mortality rates (ages 25-64) for the selected state.",
-        paste0(names(which(cause.list == input$death_cause)), " Midlife Mortality Rates for ",
-               location_str, " for ", input$year_selector)
-        # , icon("info-circle")
-      ),
-      tags$h6("The geographic distribution of midlife mortality rates (ages 25-64) for ",paste(location_str,".",sep = "")),
-      NULL
-      )
-    }
-    else {
-      tagList(
-        tags$h3(
-          title="This plot represents the distribution of midlife mortality rates (ages 25-64) for the selected state.",
-          # paste0("State View: ",names(which(cause.list == input$death_cause)), " Midlife Mortality Rates for ", names(which(state.list == input$state_choice))," for ",input$year_selector)
-          paste0(names(which(cause.list == input$death_cause)), " Midlife Mortality Rates for ", names(which(state.list == input$state_choice))," for ",input$year_selector)
-        ),
-        tags$h6("The geographic distribution of midlife mortality rates (ages 25-64) for ",paste(names(which(state.list == input$state_choice)),".",sep="")),
-        NULL
-      )
-    }
-  })
   
   # Cluster geo Header (Page 2 lower middle)
   output$textClusterGeo <- renderUI({

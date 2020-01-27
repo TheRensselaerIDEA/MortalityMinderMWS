@@ -898,6 +898,35 @@ serv_calc[[8]] <- function(calc, session) {
   })
 }
 
+#Extracting the national mean
+serv_calc[[9]] <- function(calc, session) {
+  national.mean <- reactive({
+    switch(calc$death_cause,
+           "Despair" = {
+             death_rate <- c(28.929453, 33.665595, 37.821445, 40.081486, 43.900063, 55.084642)
+           },
+           "Assault" = {
+             death_rate <- c(6.750937, 6.729051, 6.687417, 5.934990, 5.915201, 6.999898)
+           },
+           "Cancer" = {
+             death_rate <- c(107.637100, 107.638200, 106.628310, 106.949100, 105.219690, 101.169700)
+           },
+           "Cardiovascular" = {
+             death_rate <- c(96.830591, 95.807343, 92.915303, 90.702418, 91.232679, 93.598232)
+           },
+           "All Cause" = {
+             death_rate <- c(366.07178, 373.10366, 373.65807, 373.40143, 379.60383, 395.93077)
+           })
+    
+    
+    nation.dataframe <- data.frame(
+      period = c("2000-2002", "2003-2005", "2006-2008", "2009-2011", "2012-2014", "2015-2017"),
+      cluster = rep("National", 6),
+      death_rate,
+      count = rep(NA, 6))
+  })
+}
+
 
 
 serv_out <- list()
@@ -1094,9 +1123,7 @@ serv_out[["textDeathTrends"]] <- function(calc, session) {
   })
 }
 
-# 
 
-# 
 serv_out[["determinant_corr"]] <-function(calc, session) {
   renderText({
     if (nrow(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]) == 0) {
@@ -1149,37 +1176,6 @@ serv_out[["determinant_dir"]] <-function(calc, session) {
   })
 }
 
-
-# 
-# 
-#   #Extracting the national mean
-# serv_calc[[8]] <- function(calc, session) {
-#   national.mean <- reactive({
-#     switch(calc$death_cause,
-#            "Despair" = {
-#              death_rate <- c(28.929453, 33.665595, 37.821445, 40.081486, 43.900063, 55.084642)
-#            },
-#            "Assault" = {
-#              death_rate <- c(6.750937, 6.729051, 6.687417, 5.934990, 5.915201, 6.999898)
-#            },
-#            "Cancer" = {
-#              death_rate <- c(107.637100, 107.638200, 106.628310, 106.949100, 105.219690, 101.169700)
-#            },
-#            "Cardiovascular" = {
-#              death_rate <- c(96.830591, 95.807343, 92.915303, 90.702418, 91.232679, 93.598232)
-#            },
-#            "All Cause" = {
-#              death_rate <- c(366.07178, 373.10366, 373.65807, 373.40143, 379.60383, 395.93077)
-#            })
-# 
-# 
-#     nation.dataframe <- data.frame(
-#       period = c("2000-2002", "2003-2005", "2006-2008", "2009-2011", "2012-2014", "2015-2017"),
-#       cluster = rep("National", 6),
-#       death_rate,
-#       count = rep(NA, 6))
-#   })
-# }
 
 # ----------------------------------------------------------------------
 #   # Functions for data download
