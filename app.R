@@ -1526,7 +1526,289 @@ serv_out[["determinants_plot2"]] <- function(calc, session) {
     
   }, bg = "transparent")
 }
+
+serv_out[["textBoxplotTitle"]] <- function(calc, session) {
+  # Boxplot Header (upper-center panel, Page 3)
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    if(calc$state_choice == "United States") {
+      location_str <- "the United States" 
+      tagList(
+        tags$h3(
+          title="Boxplot shows the distribution of the factor within each cluster. The middle line is the median. For destructive factors, boxes will shift up for higher risk groups. For protective factors, boxes will shift down for high risk groups.",
+          # paste0("Factor View: ",input$determinant_choice, " and Risk Group Relationship for ", location_str)
+          paste0(calc$determinant_choice, " and Risk Group Relationship for ", location_str)
+        ),
+        HTML("<h5>Distribution within each cluster. The middle line is the median. For <span style='color:#f8766d'>Destructive</span> (<span style='color:#00bfc4'>Protective</span>) factors, boxes will shift <span style='color:#f8766d'>up</span> (<span style='color:#00bfc4'>down</span>) for higher risk groups."),
+        NULL
+      )
+    }
+    else {
+      tagList(
+        tags$h3(
+          title="Boxplot shows the distribution of the factor within each cluster. The middle line is the median. For destructive factors, boxes will shift up for higher risk groups. For protective factors, boxes will shift down for high risk groups.",
+          # paste0("Factor View: ",input$determinant_choice, " and Risk Group Relationship for ", names(which(state.list == input$state_choice)))
+          paste0(calc$determinant_choice, " and Risk Group Relationship for ", names(which(state.list == calc$state_choice)))
+        ),
+        HTML("<h5>Distribution within each cluster. The middle line is the median. For <span style='color:#f8766d'>Destructive</span> (<span style='color:#00bfc4'>Protective</span>) factors, boxes will shift <span style='color:#f8766d'>up</span> (<span style='color:#00bfc4'>down</span>) for higher risk groups."),
+        NULL
+      )
+    }
+  })
+}
+
+serv_out[["determinants_plot3"]] <-function(calc, session) {
+  renderPlot({
+
+    geo.namemap$county_fips <- with_options(c(scipen = 999), str_pad(geo.namemap$county_fips, 5, pad = "0"))
+    geo.namemap <- geo.namemap[geo.namemap$state_abbr != "HI",]
+    geo.namemap <- rbind(geo.namemap, c("Hawaii", "HI", "15", "Hawaii", "15001"), c("Hawaii", "HI", "15", "Honolulu", "15003"), c("Hawaii", "HI", "15", "Kalawao", "15005"), c("Hawaii", "HI", "15", "Kauai", "15007"), c("Hawaii", "HI", "15", "Maui", "15009"))
+
+    sd.code = chr.namemap.inv.2019[calc$determinant_choice, "code"]
+    sd.select <- chr.data.2019 %>%
+      dplyr::select(county_fips, VAR = sd.code) %>%
+      dplyr::right_join(calc$mort.cluster.ord(), by = "county_fips") %>%
+      dplyr::inner_join(geo.namemap, by = "county_fips") %>%
+      tidyr::drop_na()
+
+    if (nrow(sd.select) == 0) {
+      ggplot() +
+        ggtitle("Error: sd.select is empty. Aborting dot plot creation.")
+
+    } else if (nrow(sd.select) <= 6){
+
+      sd.select$County <- sd.select$county_name
+      dplyr::filter(
+        cdc.data,
+        period == "2015-2017",
+        death_cause == calc$death_cause
+      ) %>%
+        dplyr::select(county_fips, death_rate) %>%
+        dplyr::inner_join(sd.select, by = "county_fips") %>%
+        tidyr::drop_na() %>%
+        ggplot(aes(x = death_rate, y = VAR)) +
+        geom_point(aes(fill = County)) +
+        labs(
+          x = "Midlife Mortality Rate (2015-2017)",
+          y = calc$determinant_choice
+        ) +
+        # ggtitle(paste(input$determinant_choice, "and Mortality Relationship")) +
+        theme.line.mort() +
+        theme(legend.position = "top") +
+        guides(color = guide_legend(override.aes = list(shape = 15))) +
+        scale_color_manual(
+          name = "County",
+          labels = sd.select$county_name,
+          #c("#ffc4c4", "#ff8f8f", "#ff5454", "#ff1414", "#a80000")
+          values = colorRampPalette(
+            c("#fef0d9","#fdcc8a","#fc8d59","#e34a33")
+
+          )(nrow(sd.select))
+        )
+
+    } else if(calc$state_choice == "United States"){
+      dplyr::filter(
+        cdc.data,
+        period == "2015-2017",
+        death_cause == calc$death_cause
+      ) %>%
+        dplyr::select(county_fips, death_rate) %>%
+        dplyr::inner_join(sd.select, by = "county_fips") %>%
+        tidyr::drop_na() %>%
+
+        ggplot(aes(x = death_rate, y = VAR)) +
+        #geom_point(colour="#565254", shape=21, size = 3, alpha = .7,
+        #aes(fill = cluster)) +
+        stat_density_2d(aes(alpha = ..level.., fill=cluster), geom = "polygon") +
+        labs(
+          x = "Midlife Mortality Rate (2015-2017)",
+          y = calc$determinant_choice
+        ) +
+        # ggtitle(paste(input$determinant_choice, "and Mortality Relationship"))+
+        theme.line.mort() +
+        theme(legend.position = "top") +
+        guides(color = guide_legend(override.aes = list(shape = 15))) +
+        color.line.cluster(calc$state_choice, max(sd.select$cluster)) +
+        scale_fill_manual(name="Risk Group:", values = theme.categorical.colors(max(calc$mort.cluster.ord()$cluster)))
+
+    } else {
+
+      data <- dplyr::filter(
+        cdc.data,
+        period == "2015-2017",
+        death_cause == calc$death_cause
+      ) %>%
+        dplyr::select(county_fips, death_rate) %>%
+        dplyr::inner_join(sd.select, by = "county_fips") %>%
+        tidyr::drop_na()
+
+      data$cluster[data$cluster == 1] <- "1: Low"
+      data$cluster[data$cluster == 2] <- "2: Medium"
+      data$cluster[data$cluster == 3] <- "3: High"
+
+      plot <- data %>%
+        ggplot(aes(x = death_rate, y = VAR)) +
+        geom_point(colour="#565254", shape=21, size = 3, alpha = .7,
+                   aes(fill = cluster)) +
+        #stat_density_2d(aes(alpha = ..level.., fill=cluster), geom = "polygon") +
+        labs(
+          x = "Midlife Mortality Rate (2015-2017)",
+          y = calc$determinant_choice
+        ) +
+        # ggtitle(paste(input$determinant_choice, "and Mortality Relationship"))+
+        theme.line.mort() +
+        theme(legend.position = "top") +
+        guides(color = guide_legend(override.aes = list(shape = 15))) +
+        color.line.cluster(calc$state_choice, max(sd.select$cluster)) +
+        scale_fill_manual(name="Risk Group:", values = theme.categorical.colors(max(calc$mort.cluster.ord()$cluster)))
+
+
+      if (is.null(calc$county_choice())){
+        plot
+      }else{
+        county_data <- dplyr::filter(
+          data,
+          county_name == substr(calc$county_choice(), 0, nchar(calc$county_choice())-7)
+        )
+
+        if (nrow(county_data) == 0) {
+          plot + xlab("Midlife Mortality Rate (2015-2017)\nCould not plot county as data suppressed")
+        } else {
+          plot +
+            geom_point(
+              mapping = aes(x = death_rate, y = VAR, group = county_name, shape = calc$county_choice()),
+              data = county_data, color="#565254", size = 5, alpha = .7, inherit.aes = FALSE
+            ) +
+            scale_shape_manual(name = "County",
+                               values = c(18),
+                               guide = guide_legend(override.aes = list(color = c("#565254")))
+            )
+        }
+      }
+    }
+  }, bg = "transparent")
+}
+
+  # Implementation of hover (08 Oct 2019)
+serv_out[["hover_info"]] <- function(calc, session) {
+  renderUI({
+    req(calc$plot_hover) # Same as if-not-NULL
+    hover <- calc$plot_hover
+    
+    point <- nearPoints(kendall_cor_new, hover, threshold = 50, maxpoints = 1, addDist = TRUE)
+    
+    if (nrow(point) == 0) return(NULL)
+    
+    
+    # calculate point position INSIDE the image as percent of total dimensions
+    # from left (horizontal) and from top (vertical)
+    left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
+    top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
+    
+    # calculate distance from left and bottom side of the picture in pixels
+    left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
+    top_px <- hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
+    
+    # create style property fot tooltip
+    # background color is set so tooltip is a bit transparent
+    # z-index is set so we are sure are tooltip will be on top
+    style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
+                    "left:", left_px + 2, "px; top:", top_px + 2, "px;")
+    
+    #browser()
+    # actual tooltip created as wellPanel
+    # TODO: Change these variables based on `kendall.cor`
+    wellPanel(
+      style = style,
+      HTML(paste0("<b>", point$chr_code, "</b>", "<br/>",
+                  "<i>", point$DIR, "</i>","<br/>",
+                  SocialDeterminants[SocialDeterminants$Name == as.character(point$chr_code),]$Definitions[[1]],
+                  NULL
+      ))
+    )
+    
+  })
+}
+
+
+
+serv_out[["determinants_plot3_county_name"]] <- function(calc, session) {
+  renderUI({
+    req(calc$determinants_plot3_hover) # Same as if-not-NULL
+    hover <- calc$determinants_plot3_hover
+    
+    geo.namemap$county_fips <- with_options(c(scipen = 999), str_pad(geo.namemap$county_fips, 5, pad = "0"))
+    geo.namemap <- geo.namemap[geo.namemap$state_abbr != "HI",]
+    geo.namemap <- rbind(geo.namemap, c("Hawaii", "HI", "15", "Hawaii", "15001"), c("Hawaii", "HI", "15", "Honolulu", "15003"), c("Hawaii", "HI", "15", "Kalawao", "15005"), c("Hawaii", "HI", "15", "Kauai", "15007"), c("Hawaii", "HI", "15", "Maui", "15009"))
+    sd.code = chr.namemap.inv.2019[calc$determinant_choice, "code"]
+    sd.select <- chr.data.2019 %>% 
+      dplyr::select(county_fips, VAR = sd.code) %>% 
+      dplyr::right_join(calc$mort.cluster.ord(), by = "county_fips") %>% 
+      dplyr::inner_join(geo.namemap, by = "county_fips") %>%
+      tidyr::drop_na()
+    
+    
+    data <- dplyr::filter(
+      cdc.data,
+      period == "2015-2017", 
+      death_cause == calc$death_cause
+    ) %>% 
+      dplyr::select(county_fips, death_rate) %>% 
+      dplyr::inner_join(sd.select, by = "county_fips") %>% 
+      tidyr::drop_na()
+    
+    
+    point <- nearPoints(data, hover, threshold = 5, maxpoints = 1, addDist = TRUE)
+    
+    if (nrow(point) == 0) return(NULL)
+    
+    # create style property fot tooltip
+    # background color is set so tooltip is a bit transparent
+    # z-index is set so we are sure are tooltip will be on top
+    style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); pointer-events:none;",
+                    "left:", hover$coords_css$x+5, "px; top:", hover$coords_css$y+10, "px; font-size: 7px")
+    
+    #browser()
+    # actual tooltip created as wellPanel
+    # TODO: Change these variables based on `kendall.cor`
+    tags$div(
+      style = style,
+      h5(point$county_name)
+    )
+    
+  })
+}
   
+  
+  # Scatterplot Header (lower-center panel, Page 3)
+serv_out[["textScatterplotTitle"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    if(calc$state_choice == "United States") {
+      location_str <- "the United States" 
+      tagList(
+        tags$h3(
+          title="Plot of mortality rate versus factor. Each dot represents a county colored by its risk group. For destructive factors, counties will shift up as risk increases. For protective factors, counties will shift down  as risk decreases. Click on a county to see its name and where it is located on the map.",
+          paste0(calc$determinant_choice, " and Mortality Relationship for ", location_str)
+          # ,icon("info-circle")
+        ),
+        NULL
+      )
+    }
+    else {
+      tagList(
+        tags$h3(
+          title="Plot of mortality rate versus factor. Each dot represents a county colored by its risk group. For destructive factors, counties will shift up as risk increases. For protective factors, counties will shift down  as risk decreases. Click on a county to see its name and where it is located on the map.",
+          paste0(calc$determinant_choice, " and Mortality Relationship for ", names(which(state.list == calc$state_choice)))
+          # ,icon("info-circle")
+        ),
+        tags$h5("Each dot represents a county's midlife mortality rate, factor, and risk group. Click county to see map location and name."),
+        NULL
+      )
+    }
+  })
+}
+
 
 # ----------------------------------------------------------------------
 #   # Functions for data download
@@ -1574,7 +1856,7 @@ serv_out[["downloadClusters"]] <- function(calc, session) {
       paste0(calc$state_choice, "_", calc$death_cause, "_clusters.csv")
     },
     content = function(file) {
-      write.csv( mort.cluster.ord(), file, row.names = FALSE)
+      write.csv( calc$mort.cluster.ord(), file, row.names = FALSE)
     }
   )
 }
@@ -1586,7 +1868,7 @@ serv_out[["downloadClusterTime"]] <- function(calc, session) {
       paste0(calc$state_choice, "_", calc$death_cause, "_clusters_time_series.csv")
     },
     content = function(file) {
-      write.csv( mort.avg.cluster.ord(), file, row.names = FALSE)
+      write.csv( calc$mort.avg.cluster.ord(), file, row.names = FALSE)
     }
   )
 }
