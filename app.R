@@ -899,145 +899,144 @@ serv_calc[[8]] <- function(calc, session) {
 }
 
 # #Extracting the national mean
-# serv_calc[[9]] <- function(calc, session) {
-#   calc$national.mean <- reactive({
-#     switch(calc$death_cause,
-#            "Despair" = {
-#              death_rate <- c(28.929453, 33.665595, 37.821445, 40.081486, 43.900063, 55.084642)
-#            },
-#            "Assault" = {
-#              death_rate <- c(6.750937, 6.729051, 6.687417, 5.934990, 5.915201, 6.999898)
-#            },
-#            "Cancer" = {
-#              death_rate <- c(107.637100, 107.638200, 106.628310, 106.949100, 105.219690, 101.169700)
-#            },
-#            "Cardiovascular" = {
-#              death_rate <- c(96.830591, 95.807343, 92.915303, 90.702418, 91.232679, 93.598232)
-#            },
-#            "All Cause" = {
-#              death_rate <- c(366.07178, 373.10366, 373.65807, 373.40143, 379.60383, 395.93077)
-#            })
-#     
-#     
-#     nation.dataframe <- data.frame(
-#       period = c("2000-2002", "2003-2005", "2006-2008", "2009-2011", "2012-2014", "2015-2017"),
-#       cluster = rep("National", 6),
-#       death_rate,
-#       count = rep(NA, 6))
-#   })
-# }
-# 
-# serv_calc[[10]] <- function(calc, session) {
-#   calc$mort.rate.original <- reactive({
-#     calc$county_choice(NULL)
-#     assign("county_polygon", NULL, envir = .GlobalEnv)
-#     assign("page1_period_choice", 6, envir = .GlobalEnv)
-#     if(calc$state_choice == "United States"){
-#       cdc.unimputed.data %>% dplyr::filter(
-#         death_cause == calc$death_cause,
-#         #state_abbr == input$state_choice,
-#         period == "2015-2017"
-#       ) %>%
-#         dplyr::mutate(
-#           # death_rate = death_num / population * 10^5
-#           #death_rate = cut(death_rate, bin.geo.mort("Despair"))
-#         ) %>%
-#         dplyr::select(county_fips, death_rate)
-#     }else {
-#       assign("state_map", readRDS(paste("../shape_files/", calc$state_choice, ".Rds", sep = "")), envir = .GlobalEnv)
-#       cdc.unimputed.data %>% dplyr::filter(
-#         death_cause == calc$death_cause,
-#         state_abbr == calc$state_choice,
-#         period == "2015-2017"
-#       ) %>%
-#         dplyr::mutate(
-#           # death_rate = death_num / population * 10^5
-#           #death_rate = cut(death_rate, bin.geo.mort("Despair"))
-#         ) %>%
-#         dplyr::select(county_fips, death_rate)
-#     }
-#   })
-# }
-#   
-#   # Cache of UNORDERED mortality trend cluster label calculation
-# serv_calc[[11]] <- function(calc, session) {
-#   calc$mort.cluster.raw <- reactive({
-#     
-#     # Variables:
-#     #   - county_fips
-#     #   - cluster
-#     
-#     if (calc$state_choice == "United States"){
-#       # Currently hard-coded 6 clusters
-#       n.clusters <- n.clusters.nation
-#       cluster.counties(cdc.mort.mat(cdc.data, "US", calc$death_cause),
-#                        cluster.method="kmeans",
-#                        cluster.num=n.clusters)
-#     } 
-#     else{
-#       state.data <- cdc.mort.mat(cdc.data, calc$state_choice, calc$death_cause)
-#       if (nrow(state.data) <= 6) {
-#         county_fips <- as.character(state.data$county_fips)
-#         cluster <- as.character(order(state.data["2015-2017"]))
-#         tibble(county_fips, cluster)
-#       }
-#       else {
-#         n.clusters <- n.clusters.state
-#         cluster.counties(state.data,
-#                          cluster.method="kmeans",
-#                          cluster.num=n.clusters)
-#       }
-#     }
-#   })
-# }
-#   
-#   # Cache of Weighed Avg by UNORDERED cluster
-# serv_calc[[12]] <- function(calc, session) {
-#   calc$mort.avg.cluster.raw <- reactive({
-#     
-#     # Variables:
-#     #   - period
-#     #   - cluster
-#     #   - death_rate
-#     #   - count
-#     
-#     # Notes:
-#     #   - The cluster labels are UNORDERED
-#     
-#     
-#     get.cluster.deathrate.during.time(
-#       calc$mort.cluster.raw(), 
-#       cdc.data, 
-#       death.cause=calc$death_cause
-#     )
-#   })
-# }
-#   
-#   # Cache of MAPPING from UNORDERED mortality trend label to ORDERED mortality trend label
-# serv_calc[[13]] <- function(calc, session) {
-#   calc$mort.cluster.map <- reactive({
-#     
-#     # Variables:
-#     #   - ord
-#     
-#     # Notes:
-#     #   - This is a mapping from raw cluster label to ORDERED cluster.
-#     #       Row names are the original cluster and `ord` are the reordered cluster
-#     
-#     get.cluster.order.map(calc$mort.avg.cluster.raw(), time.period = "2015-2017")
-#   })
-#   
-#   # Cache of ORDERED mortality trend cluster label calculation
-# serv_calc[[14]]
-#   calc$mort.cluster.ord <- reactive({
-#     
-#     # Variables:
-#     #   - county_fips
-#     #   - cluster
-#     
-#     order.county.clusters(calc$mort.cluster.raw(), calc$mort.cluster.map())
-#   })
-# }
+serv_calc[[9]] <- function(calc, session) {
+  calc$national.mean <- reactive({
+    switch(calc$death_cause,
+           "Despair" = {
+             death_rate <- c(28.929453, 33.665595, 37.821445, 40.081486, 43.900063, 55.084642)
+           },
+           "Assault" = {
+             death_rate <- c(6.750937, 6.729051, 6.687417, 5.934990, 5.915201, 6.999898)
+           },
+           "Cancer" = {
+             death_rate <- c(107.637100, 107.638200, 106.628310, 106.949100, 105.219690, 101.169700)
+           },
+           "Cardiovascular" = {
+             death_rate <- c(96.830591, 95.807343, 92.915303, 90.702418, 91.232679, 93.598232)
+           },
+           "All Cause" = {
+             death_rate <- c(366.07178, 373.10366, 373.65807, 373.40143, 379.60383, 395.93077)
+           })
+
+
+    nation.dataframe <- data.frame(
+      period = c("2000-2002", "2003-2005", "2006-2008", "2009-2011", "2012-2014", "2015-2017"),
+      cluster = rep("National", 6),
+      death_rate,
+      count = rep(NA, 6))
+  })
+}
+
+serv_calc[[10]] <- function(calc, session) {
+  calc$mort.rate.original <- reactive({
+    calc$county_choice(NULL)
+    assign("county_polygon", NULL, envir = .GlobalEnv)
+    assign("page1_period_choice", 6, envir = .GlobalEnv)
+    if(calc$state_choice == "United States"){
+      cdc.unimputed.data %>% dplyr::filter(
+        death_cause == calc$death_cause,
+        #state_abbr == input$state_choice,
+        period == "2015-2017"
+      ) %>%
+        dplyr::mutate(
+          # death_rate = death_num / population * 10^5
+          #death_rate = cut(death_rate, bin.geo.mort("Despair"))
+        ) %>%
+        dplyr::select(county_fips, death_rate)
+    }else {
+      assign("state_map", readRDS(paste("../shape_files/", calc$state_choice, ".Rds", sep = "")), envir = .GlobalEnv)
+      cdc.unimputed.data %>% dplyr::filter(
+        death_cause == calc$death_cause,
+        state_abbr == calc$state_choice,
+        period == "2015-2017"
+      ) %>%
+        dplyr::mutate(
+          # death_rate = death_num / population * 10^5
+          #death_rate = cut(death_rate, bin.geo.mort("Despair"))
+        ) %>%
+        dplyr::select(county_fips, death_rate)
+    }
+  })
+}
+
+  # Cache of UNORDERED mortality trend cluster label calculation
+serv_calc[[11]] <- function(calc, session) {
+  calc$mort.cluster.raw <- reactive({
+
+    # Variables:
+    #   - county_fips
+    #   - cluster
+
+    if (calc$state_choice == "United States"){
+      # Currently hard-coded 6 clusters
+      n.clusters <- n.clusters.nation
+      cluster.counties(cdc.mort.mat(cdc.data, "US", calc$death_cause),
+                       cluster.method="kmeans",
+                       cluster.num=n.clusters)
+    }
+    else{
+      state.data <- cdc.mort.mat(cdc.data, calc$state_choice, calc$death_cause)
+      if (nrow(state.data) <= 6) {
+        county_fips <- as.character(state.data$county_fips)
+        cluster <- as.character(order(state.data["2015-2017"]))
+        tibble(county_fips, cluster)
+      }
+      else {
+        n.clusters <- n.clusters.state
+        cluster.counties(state.data,
+                         cluster.method="kmeans",
+                         cluster.num=n.clusters)
+      }
+    }
+  })
+}
+
+  # Cache of Weighed Avg by UNORDERED cluster
+serv_calc[[12]] <- function(calc, session) {
+  calc$mort.avg.cluster.raw <- reactive({
+
+    # Variables:
+    #   - period
+    #   - cluster
+    #   - death_rate
+    #   - count
+
+    # Notes:
+    #   - The cluster labels are UNORDERED
+
+
+    get.cluster.deathrate.during.time(
+      calc$mort.cluster.raw(),
+      cdc.data,
+      death.cause=calc$death_cause
+    )
+  })
+}
+
+  # Cache of MAPPING from UNORDERED mortality trend label to ORDERED mortality trend label
+serv_calc[[13]] <- function(calc, session) {
+  calc$mort.cluster.map <- reactive({
+
+    # Variables:
+    #   - ord
+
+    # Notes:
+    #   - This is a mapping from raw cluster label to ORDERED cluster.
+    #       Row names are the original cluster and `ord` are the reordered cluster
+
+    get.cluster.order.map(calc$mort.avg.cluster.raw(), time.period = "2015-2017")
+  })
+
+  # Cache of ORDERED mortality trend cluster label calculation
+  calc$mort.cluster.ord <- reactive({
+
+    # Variables:
+    #   - county_fips
+    #   - cluster
+
+    order.county.clusters(calc$mort.cluster.raw(), calc$mort.cluster.map())
+  })
+}
 
 
 serv_out <- list()
