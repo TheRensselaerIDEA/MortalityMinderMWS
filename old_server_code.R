@@ -3,20 +3,7 @@ server <- function(input, output, session) {
   
 
   
-  # Cache of Weighed Avg by ORDERED cluster
-  mort.avg.cluster.ord <- reactive({
-    
-    # Variables:
-    #   - period
-    #   - cluster
-    #   - death_rate
-    #   - count
-    
-    # Notes:
-    #   - The cluster labels are ORDERED
-    
-    order.cluster.deathrate.during.time(mort.avg.cluster.raw(), mort.cluster.map())
-  })
+
   
   
   
@@ -166,101 +153,38 @@ server <- function(input, output, session) {
   
 
   
-  rv_county_drop_choice <- reactive({})
-  
-  county_event <- observeEvent(input$county_drop_choice, {
-    rv_county_drop_choice <- input$county_drop_choice 
-    county_choice(paste0(rv_county_drop_choice, " County"))
-  },
-  ignoreInit = TRUE
-  )
-  
-  
   
   # ----------------------------------------------------------------------
 
 
-  
-  update.county.fips <- function(value) {
-    if (!is.na(value) & nchar(value) == 4) {
-      return (
-        paste("0", value, sep = "")
-      )
-    } else {
-      return (value)
-    }
-  }
- 
-  
-  
-
-  
-  # Geo-plot of selected determinant for selected county
-  # Based on scatterplot
-  output$determinants_plot5 <- renderLeaflet({
-    
-    geo.namemap <- geo.namemap[geo.namemap$state_abbr != "HI",]
-    geo.namemap <- rbind(geo.namemap, c("Hawaii", "HI", "15", "Hawaii", "15001"), c("Hawaii", "HI", "15", "Honolulu", "15003"), c("Hawaii", "HI", "15", "Kalawao", "15005"), c("Hawaii", "HI", "15", "Kauai", "15007"), c("Hawaii", "HI", "15", "Maui", "15009"))
-    geo.namemap$county_fips <- with_options(c(scipen = 999), str_pad(geo.namemap$county_fips, 5, pad = "0"))
-    
-    sd.code = chr.namemap.inv.2019[input$determinant_choice, "code"]
-    sd.select <- chr.data.2019 %>%
-      dplyr::select(county_fips, VAR = sd.code) %>%
-      dplyr::right_join(mort.cluster.ord(), by = "county_fips") %>%
-      dplyr::inner_join(geo.namemap, by = "county_fips") %>%
-      tidyr::drop_na()
-    
-    
-    
-    if(input$state_choice == "United States"){
-      # If "United States" suppress plot
-      # sd.data <- dplyr::filter(
-      #   cdc.data,
-      #   period == "2015-2017", 
-      #   death_cause == input$death_cause
-      # ) %>% 
-      #   dplyr::select(county_fips, death_rate) %>% 
-      #   dplyr::inner_join(sd.select, by = "county_fips") %>% 
-      #   tidyr::drop_na() 
-      #   
-      #   geo.sd.plot("US", input$determinant_choice, sd.data, "2015-2017")
-      
-    } else {
-      
-      sd.data <- dplyr::filter(
-        cdc.data,
-        period == "2015-2017", 
-        death_cause == input$death_cause
-      ) %>% 
-        dplyr::select(county_fips, death_rate) %>% 
-        dplyr::inner_join(sd.select, by = "county_fips") %>% 
-        tidyr::drop_na()
-      
-      if (input$state_choice == "FL"){
-        sd.data <- sd.data[-c(47), ]
-        sd.data$county_name[[46]] = "Okaloosa"
-      }  
-      
-      # NOTE: The column we care about is now called VAR
-      geo.sd.plot(input$state_choice, input$determinant_choice, sd.data, "2015-2017", "Scale:")
-      
-    }
-    
-  })
-  
-  output$determinant_title <- renderText({
-    input$determinant_choice
-  })
-  
-  output$state_title <- renderText({
-    if (input$state_choice == "United States") {
-      "United States"
-    }
-    else {
-      names(which(state.list == input$state_choice))
-    }
-  })
-
+  # 
+  # update.county.fips <- function(value) {
+  #   if (!is.na(value) & nchar(value) == 4) {
+  #     return (
+  #       paste("0", value, sep = "")
+  #     )
+  #   } else {
+  #     return (value)
+  #   }
+  # }
+  # 
+  # 
+  # 
+  # 
+  # 
+  # output$determinant_title <- renderText({
+  #   input$determinant_choice
+  # })
+  # 
+  # output$state_title <- renderText({
+  #   if (input$state_choice == "United States") {
+  #     "United States"
+  #   }
+  #   else {
+  #     names(which(state.list == input$state_choice))
+  #   }
+  # })
+  # 
 
   
 
@@ -1091,36 +1015,7 @@ server <- function(input, output, session) {
     }
   })
   
-  # Determinant geo Header (Page 2 lower middle)
-  output$textSDGeo <- renderUI({
-    # We reference state.list, cause.list and cause.definitions defined above
-    if(input$state_choice == "United States") {
-    }
-    else {
-      tagList(
-        tags$h4("Geographic distribution of ",input$determinant_choice," for ", names(which(state.list == input$state_choice))),
-        NULL
-      )
-    }
-  })
-  
-  # Determinant geo Header (Page 2 lower middle)
-  output$textCountyPrompt <- renderUI({
-    # We reference state.list, cause.list and cause.definitions defined above
-    if(input$state_choice == "United States") {
-      # No prompt if United States
-    }
-    else {
-      tagList(
-        tags$h3(
-          style = "margin-top: 0;",
-          paste0("Geographic distribution of ",input$determinant_choice," for ", names(which(state.list == input$state_choice)))
-        ),
-        tags$h6("Select from the drop-down for county details or click the map."),
-        NULL
-      )
-    }
-  })
+
   
   
   # Determinant Header (upper-left panel, Page 2)
@@ -1182,26 +1077,26 @@ server <- function(input, output, session) {
     )
   })
   
-  
-  # Mortality Rate Table
-  output$table <- renderTable(width = "100%", {
-    rate.table <- mort.avg.cluster.ord() %>%
-      dplyr::select(cluster, period, death_rate) %>%
-      tidyr::spread(key = period, value = death_rate) %>% 
-      dplyr::select(cluster, `2000-2002`, `2015-2017`)
-    
-    count.table <- mort.avg.cluster.ord() %>% 
-      dplyr::select(cluster, count) %>% 
-      base::unique()
-    
-    dplyr::left_join(count.table, rate.table, by = "cluster") %>%
-      dplyr::mutate(cluster = as.character(cluster)) %>%
-      dplyr::arrange(desc(cluster)) %>%
-      dplyr::rename(
-        "Trend Group" = "cluster",
-        "Count" = "count"
-      )
-  })
+  # 
+  # # Mortality Rate Table
+  # output$table <- renderTable(width = "100%", {
+  #   rate.table <- mort.avg.cluster.ord() %>%
+  #     dplyr::select(cluster, period, death_rate) %>%
+  #     tidyr::spread(key = period, value = death_rate) %>% 
+  #     dplyr::select(cluster, `2000-2002`, `2015-2017`)
+  #   
+  #   count.table <- mort.avg.cluster.ord() %>% 
+  #     dplyr::select(cluster, count) %>% 
+  #     base::unique()
+  #   
+  #   dplyr::left_join(count.table, rate.table, by = "cluster") %>%
+  #     dplyr::mutate(cluster = as.character(cluster)) %>%
+  #     dplyr::arrange(desc(cluster)) %>%
+  #     dplyr::rename(
+  #       "Trend Group" = "cluster",
+  #       "Count" = "count"
+  #     )
+  # })
   
   # Mortality Trend Cluster by County
   output$geo_cluster_kmean <- renderLeaflet({
@@ -1216,19 +1111,19 @@ server <- function(input, output, session) {
   })
   
   
-  # Mortality Trend Cluster by County
-  # TODO: Replace this with a social determinant map!
-  output$geo_cluster_kmean_2 <- renderLeaflet({
-    
-    if(input$state_choice == "United States"){
-      # draw.geo.cluster("US", input$death_cause, mort.cluster.ord(),
-      #                  max(mort.cluster.ord()$cluster))
-    }else{
-      draw.geo.cluster(input$state_choice, input$death_cause, mort.cluster.ord(),
-                       max(mort.cluster.ord()$cluster))
-    }
-    
-  })
+  # # Mortality Trend Cluster by County
+  # # TODO: Replace this with a social determinant map!
+  # output$geo_cluster_kmean_2 <- renderLeaflet({
+  #   
+  #   if(input$state_choice == "United States"){
+  #     # draw.geo.cluster("US", input$death_cause, mort.cluster.ord(),
+  #     #                  max(mort.cluster.ord()$cluster))
+  #   }else{
+  #     draw.geo.cluster(input$state_choice, input$death_cause, mort.cluster.ord(),
+  #                      max(mort.cluster.ord()$cluster))
+  #   }
+  #   
+  # })
   
   # Mortality Rate by County Period 1
   output$geo_mort_change1 <- renderLeaflet({

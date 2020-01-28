@@ -1038,6 +1038,35 @@ serv_calc[[13]] <- function(calc, session) {
   })
 }
 
+# Cache of Weighed Avg by ORDERED cluster
+serv_calc[[14]] <- function(calc, session) {
+  calc$mort.avg.cluster.ord <- reactive({
+    
+    # Variables:
+    #   - period
+    #   - cluster
+    #   - death_rate
+    #   - count
+    
+    # Notes:
+    #   - The cluster labels are ORDERED
+    
+    order.cluster.deathrate.during.time(calc$mort.avg.cluster.raw(), calc$mort.cluster.map())
+  })
+}
+
+serv_calc[[15]] <-function(calc, session) {
+  calc$rv_county_drop_choice <- reactive({})
+
+  calc$county_event <- observeEvent(calc$county_drop_choice, {
+    calc$rv_county_drop_choice <- calc$county_drop_choice
+    calc$county_choice(paste0(calc$rv_county_drop_choice, " County"))
+  },
+  ignoreInit = TRUE
+  )
+}
+
+
 
 serv_out <- list()
 
@@ -1806,6 +1835,97 @@ serv_out[["textScatterplotTitle"]] <- function(calc, session) {
         NULL
       )
     }
+  })
+}
+
+# Determinant geo Header (Page 2 lower middle)
+serv_out[["textSDGeo"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    if(calc$state_choice == "United States") {
+    }
+    else {
+      tagList(
+        tags$h4("Geographic distribution of ",calc$determinant_choice," for ", names(which(state.list == calc$state_choice))),
+        NULL
+      )
+    }
+  })
+}
+
+
+# Determinant geo Header (Page 2 lower middle)
+serv_out[["textCountyPrompt"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    if(calc$state_choice == "United States") {
+      # No prompt if United States
+    }
+    else {
+      tagList(
+        tags$h3(
+          style = "margin-top: 0;",
+          paste0("Geographic distribution of ",calc$determinant_choice," for ", names(which(state.list == calc$state_choice)))
+        ),
+        tags$h6("Select from the drop-down for county details or click the map."),
+        NULL
+      )
+    }
+  })
+}
+
+  # Geo-plot of selected determinant for selected county
+  # Based on scatterplot
+serv_out[["determinants_plot5"]] <- function(calc, session) {
+  renderLeaflet({
+    
+    geo.namemap <- geo.namemap[geo.namemap$state_abbr != "HI",]
+    geo.namemap <- rbind(geo.namemap, c("Hawaii", "HI", "15", "Hawaii", "15001"), c("Hawaii", "HI", "15", "Honolulu", "15003"), c("Hawaii", "HI", "15", "Kalawao", "15005"), c("Hawaii", "HI", "15", "Kauai", "15007"), c("Hawaii", "HI", "15", "Maui", "15009"))
+    geo.namemap$county_fips <- with_options(c(scipen = 999), str_pad(geo.namemap$county_fips, 5, pad = "0"))
+    
+    sd.code = chr.namemap.inv.2019[calc$determinant_choice, "code"]
+    sd.select <- chr.data.2019 %>%
+      dplyr::select(county_fips, VAR = sd.code) %>%
+      dplyr::right_join(calc$mort.cluster.ord(), by = "county_fips") %>%
+      dplyr::inner_join(geo.namemap, by = "county_fips") %>%
+      tidyr::drop_na()
+    
+    
+    
+    if(calc$state_choice == "United States"){
+      # If "United States" suppress plot
+      # sd.data <- dplyr::filter(
+      #   cdc.data,
+      #   period == "2015-2017", 
+      #   death_cause == input$death_cause
+      # ) %>% 
+      #   dplyr::select(county_fips, death_rate) %>% 
+      #   dplyr::inner_join(sd.select, by = "county_fips") %>% 
+      #   tidyr::drop_na() 
+      #   
+      #   geo.sd.plot("US", input$determinant_choice, sd.data, "2015-2017")
+      
+    } else {
+      
+      sd.data <- dplyr::filter(
+        cdc.data,
+        period == "2015-2017", 
+        death_cause == calc$death_cause
+      ) %>% 
+        dplyr::select(county_fips, death_rate) %>% 
+        dplyr::inner_join(sd.select, by = "county_fips") %>% 
+        tidyr::drop_na()
+      
+      if (calc$state_choice == "FL"){
+        sd.data <- sd.data[-c(47), ]
+        sd.data$county_name[[46]] = "Okaloosa"
+      }  
+      
+      # NOTE: The column we care about is now called VAR
+      geo.sd.plot(calc$state_choice, calc$determinant_choice, sd.data, "2015-2017", "Scale:")
+      
+    }
+    
   })
 }
 
