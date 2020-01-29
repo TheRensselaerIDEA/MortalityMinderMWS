@@ -792,8 +792,8 @@ highlight_county <- function(event){
       }
     }
   }
-  # draw_border("geo_cluster_kmean", county_polygon)
-  # draw_border("geo_mort_change2", county_polygon)
+  draw_border("geo_cluster_kmean", county_polygon)
+  draw_border("geo_mort_change2", county_polygon)
   draw_border("determinants_plot5", county_polygon)
 }
 
@@ -902,7 +902,7 @@ serv_calc[[7]] <- function(calc, session) {
     if(calc$state_choice == "United States"){
       cdc.data %>% dplyr::filter(
         death_cause == calc$death_cause,
-        #state_abbr == input$state_choice,
+        #state_abbr == calc$state_choice,
         period == "2015-2017"
       ) %>%
         dplyr::mutate(
@@ -983,7 +983,7 @@ serv_calc[[10]] <- function(calc, session) {
     if(calc$state_choice == "United States"){
       cdc.unimputed.data %>% dplyr::filter(
         death_cause == calc$death_cause,
-        #state_abbr == input$state_choice,
+        #state_abbr == calc$state_choice,
         period == "2015-2017"
       ) %>%
         dplyr::mutate(
@@ -1117,27 +1117,31 @@ serv_calc[[15]] <-function(calc, session) {
 
 #  
 #   # click on geo cluster map shows county data on mort_line
-# serv_calc[[18]] <- function(calc, session) {
-#   observe({
-#     event <- calc$geo_cluster_kmean_shape_click
-#     if (is.null(event))
-#       return()
-#     highlight_county(event)
-#     county_choice(event$id)
-#     updatePickerInput(session, "county_drop_choice", selected = gsub(" County", "", event$id))
-#   })
-#   
-#   observe({
-#     event <- calc$geo_mort_change2_shape_click
-#     if (is.null(event))
-#       return()
-#     highlight_county(event)
-#     county_choice(event$id)
-#     updatePickerInput(session, "county_drop_choice", selected = gsub(" County", "", event$id))
-#   })
-#   
-# 
 serv_calc[[16]] <- function(calc, session) {
+  observe({
+    event <- calc$geo_cluster_kmean_shape_click
+    if (is.null(event))
+      return()
+    highlight_county(event)
+    calc$county_choice(event$id)
+    updatePickerInput(session, "county_drop_choice", selected = gsub(" County", "", event$id))
+  })
+}
+  
+
+serv_calc[[17]] <- function(calc, session) {
+  observe({
+    event <- calc$geo_mort_change2_shape_click
+    if (is.null(event))
+      return()
+    highlight_county(event)
+    calc$county_choice(event$id)
+    updatePickerInput(session, "county_drop_choice", selected = gsub(" County", "", event$id))
+  })
+}
+
+
+serv_calc[[18]] <- function(calc, session) {
   observe({
     event <- calc$determinants_plot5_shape_click
     if (is.null(event))
@@ -1149,7 +1153,7 @@ serv_calc[[16]] <- function(calc, session) {
 }
 
 
-serv_calc[[17]] <- function(calc, session) {
+serv_calc[[19]] <- function(calc, session) {
   observe({
     county_name <- sub(calc$county_choice(), pattern = " [[:alpha:]]*$", replacement = "")
     req(county_name)
@@ -1171,14 +1175,14 @@ serv_calc[[17]] <- function(calc, session) {
       polygon <- state_map@polygons[[county_indices[[1]]]]
     }
 
-    # calc$draw_border("geo_cluster_kmean", polygon)
-    # calc$draw_border("geo_mort_change2", polygon)
+    draw_border("geo_cluster_kmean", polygon)
+    draw_border("geo_mort_change2", polygon)
     draw_border("determinants_plot5", polygon)
   })
 }
 
 
-serv_calc[[18]] <- function(calc, session) {
+serv_calc[[20]] <- function(calc, session) {
   observe({
     event <- calc$determinants_plot3_click
     req(event)
@@ -1218,7 +1222,7 @@ serv_calc[[18]] <- function(calc, session) {
 
   
   # click on bar plot triggers page change
-serv_calc[[19]] <- function(calc, session) {
+serv_calc[[21]] <- function(calc, session) {
   observe({
     req(calc$page2_bar_plot_click) # Same as if-not-NULL
     click <- calc$page2_bar_plot_click
@@ -1392,7 +1396,7 @@ serv_out[["textMortRates"]] <- function(calc, session) {
       tagList(
         tags$h3(
           title="This plot represents the distribution of midlife mortality rates (ages 25-64) for the selected state.",
-          # paste0("State View: ",names(which(cause.list == input$death_cause)), " Midlife Mortality Rates for ", names(which(state.list == input$state_choice))," for ",input$year_selector)
+          # paste0("State View: ",names(which(cause.list == calc$death_cause)), " Midlife Mortality Rates for ", names(which(state.list == calc$state_choice))," for ",calc$year_selector)
           paste0(names(which(cause.list == calc$death_cause)), " Midlife Mortality Rates for ", names(which(state.list == calc$state_choice))," for ",calc$year_selector)
         ),
         tags$h6("The geographic distribution of midlife mortality rates (ages 25-64) for ",paste(names(which(state.list == calc$state_choice)),".",sep="")),
@@ -1656,7 +1660,7 @@ serv_out[["determinants_plot2"]] <- function(calc, session) {
           
           legend.position = "none"
         ) + 
-        # ggtitle(paste(input$determinant_choice, "and Risk County Relationship"))+
+        # ggtitle(paste(calc$determinant_choice, "and Risk County Relationship"))+
         scale_fill_manual(
           name = "County",
           labels = sd.select$county_name,  
@@ -1690,7 +1694,7 @@ serv_out[["determinants_plot2"]] <- function(calc, session) {
           y = calc$determinant_choice
           
         ) + 
-        # ggtitle(paste(input$determinant_choice, "and Risk Group Relationship"))+
+        # ggtitle(paste(calc$determinant_choice, "and Risk Group Relationship"))+
         scale_fill_manual(values = theme.categorical.colors(max(calc$mort.cluster.ord()$cluster)))
       
       
@@ -1719,7 +1723,7 @@ serv_out[["determinants_plot2"]] <- function(calc, session) {
           x = "Risk Group",
           y = calc$determinant_choice
         ) + 
-        # ggtitle(paste(input$determinant_choice, "and Risk Group Relationship"))+
+        # ggtitle(paste(calc$determinant_choice, "and Risk Group Relationship"))+
         scale_fill_manual(values = theme.categorical.colors(max(calc$mort.cluster.ord()$cluster)))
     }
     
@@ -1735,7 +1739,7 @@ serv_out[["textBoxplotTitle"]] <- function(calc, session) {
       tagList(
         tags$h3(
           title="Boxplot shows the distribution of the factor within each cluster. The middle line is the median. For destructive factors, boxes will shift up for higher risk groups. For protective factors, boxes will shift down for high risk groups.",
-          # paste0("Factor View: ",input$determinant_choice, " and Risk Group Relationship for ", location_str)
+          # paste0("Factor View: ",calc$determinant_choice, " and Risk Group Relationship for ", location_str)
           paste0(calc$determinant_choice, " and Risk Group Relationship for ", location_str)
         ),
         HTML("<h5>Distribution within each cluster. The middle line is the median. For <span style='color:#f8766d'>Destructive</span> (<span style='color:#00bfc4'>Protective</span>) factors, boxes will shift <span style='color:#f8766d'>up</span> (<span style='color:#00bfc4'>down</span>) for higher risk groups."),
@@ -1746,7 +1750,7 @@ serv_out[["textBoxplotTitle"]] <- function(calc, session) {
       tagList(
         tags$h3(
           title="Boxplot shows the distribution of the factor within each cluster. The middle line is the median. For destructive factors, boxes will shift up for higher risk groups. For protective factors, boxes will shift down for high risk groups.",
-          # paste0("Factor View: ",input$determinant_choice, " and Risk Group Relationship for ", names(which(state.list == input$state_choice)))
+          # paste0("Factor View: ",calc$determinant_choice, " and Risk Group Relationship for ", names(which(state.list == calc$state_choice)))
           paste0(calc$determinant_choice, " and Risk Group Relationship for ", names(which(state.list == calc$state_choice)))
         ),
         HTML("<h5>Distribution within each cluster. The middle line is the median. For <span style='color:#f8766d'>Destructive</span> (<span style='color:#00bfc4'>Protective</span>) factors, boxes will shift <span style='color:#f8766d'>up</span> (<span style='color:#00bfc4'>down</span>) for higher risk groups."),
@@ -1791,7 +1795,7 @@ serv_out[["determinants_plot3"]] <-function(calc, session) {
           x = "Midlife Mortality Rate (2015-2017)",
           y = calc$determinant_choice
         ) +
-        # ggtitle(paste(input$determinant_choice, "and Mortality Relationship")) +
+        # ggtitle(paste(calc$determinant_choice, "and Mortality Relationship")) +
         theme.line.mort() +
         theme(legend.position = "top") +
         guides(color = guide_legend(override.aes = list(shape = 15))) +
@@ -1823,7 +1827,7 @@ serv_out[["determinants_plot3"]] <-function(calc, session) {
           x = "Midlife Mortality Rate (2015-2017)",
           y = calc$determinant_choice
         ) +
-        # ggtitle(paste(input$determinant_choice, "and Mortality Relationship"))+
+        # ggtitle(paste(calc$determinant_choice, "and Mortality Relationship"))+
         theme.line.mort() +
         theme(legend.position = "top") +
         guides(color = guide_legend(override.aes = list(shape = 15))) +
@@ -1854,7 +1858,7 @@ serv_out[["determinants_plot3"]] <-function(calc, session) {
           x = "Midlife Mortality Rate (2015-2017)",
           y = calc$determinant_choice
         ) +
-        # ggtitle(paste(input$determinant_choice, "and Mortality Relationship"))+
+        # ggtitle(paste(calc$determinant_choice, "and Mortality Relationship"))+
         theme.line.mort() +
         theme(legend.position = "top") +
         guides(color = guide_legend(override.aes = list(shape = 15))) +
@@ -2067,13 +2071,13 @@ serv_out[["determinants_plot5"]] <- function(calc, session) {
       # sd.data <- dplyr::filter(
       #   cdc.data,
       #   period == "2015-2017", 
-      #   death_cause == input$death_cause
+      #   death_cause == calc$death_cause
       # ) %>% 
       #   dplyr::select(county_fips, death_rate) %>% 
       #   dplyr::inner_join(sd.select, by = "county_fips") %>% 
       #   tidyr::drop_na() 
       #   
-      #   geo.sd.plot("US", input$determinant_choice, sd.data, "2015-2017")
+      #   geo.sd.plot("US", calc$determinant_choice, sd.data, "2015-2017")
       
     } else {
       
@@ -2128,7 +2132,76 @@ serv_out[["textDeterminants2"]] <- function(calc, session) {
     }
   })
 }
+
+  # Mortality Trend Cluster by County
+serv_out[["geo_cluster_kmean"]] <- function(calc, session) {
+  renderLeaflet({
+    
+    if(calc$state_choice == "United States"){
+      kmean.us.plot(calc$death_cause)
+    }else{
+      draw.geo.cluster(calc$state_choice, calc$death_cause, calc$mort.cluster.ord(), 
+                       max(calc$mort.cluster.ord()$cluster))
+    }
+    
+  })
+}
+
   
+  # Cluster geo Header (Page 2 lower middle)
+serv_out[["textClusterGeo"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    if (calc$state_choice == "United States") {
+      location_str <- "the United States" 
+      tagList(
+        tags$h3(
+          title="This plot represents the geographic distribution of risk groups for the selected state.",
+          paste0(names(which(cause.list == calc$death_cause)), " Risk Groups for ",location_str)
+          # ,icon("info-circle")
+        ),
+        tags$h6("A map of ",location_str," in which each county is categorized according to level of risk."),
+        NULL
+      )
+    }
+    else {
+      tagList(
+        tags$h3(
+          title="This plot represents the geographic distribution of clusters for the selected state.",
+          paste0(names(which(cause.list == calc$death_cause)), " Risk Groups for ", names(which(state.list == calc$state_choice)))
+          # ,icon("info-circle")
+        ),
+        tags$h6("A map of ",names(which(state.list == calc$state_choice))," in which each county is categorized according to level of risk."),
+        NULL
+      )
+    }
+  })
+}
+
+
+  # Mortality Rate by County Period 2
+serv_out[["geo_mort_change2"]] <- function(calc, session) {
+  renderLeaflet({
+    if(calc$state_choice == "United States"){
+      geo.us.plot(calc$death_cause, calc$year_selector)
+    } else{
+      mort.data <- dplyr::filter(
+        cdc.data,
+        state_abbr == calc$state_choice,
+        death_cause == calc$death_cause,
+        period == calc$year_selector
+      ) %>% 
+        dplyr::mutate(
+          # death_rate = death_num / population * 10^5,
+          death_rate = cut(death_rate, bin.geo.mort(calc$death_cause))
+        ) %>%
+        dplyr::select(county_fips, death_rate, period)
+      
+      geo.plot(calc$state_choice, calc$death_cause, mort.data, calc$year_selector)
+    }
+    
+  })
+}
 
 # ----------------------------------------------------------------------
 #   # Functions for data download
