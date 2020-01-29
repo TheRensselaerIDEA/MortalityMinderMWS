@@ -1017,35 +1017,6 @@ server <- function(input, output, session) {
   
 
   
-  
-  # Determinant Header (upper-left panel, Page 2)
-  output$textDeterminants2 <- renderUI({
-    # We reference state.list, cause.list and cause.definitions defined above
-    if(input$state_choice == "United States") {
-      location_str <- "the United States" 
-      tagList(
-        tags$h3(
-          title="Each factor is rated as Destructive, meaning that it has a positive correlation with the risk group; or Protective, meaning it has a negative correlation with the risk group. MortalityMinder shows those factors which have the highest absolute correlation with mortality risk groups. For more information on the method of determining correlation please see GitHub Wiki",
-          paste0("Factors Associated with ",names(which(cause.list == input$death_cause)), " for ", location_str), 
-          icon("info-circle")
-        ),
-        HTML("<h5>Kendall Correlation between social and economic factors and mortality risk groups. <span style='color:#f8766d'>Positively</span> (<span style='color:#00bfc4'>Negatively</span>) correlated factors indicate potential <span style='color:#f8766d'>Destructive</span> (<span style='color:#00bfc4'>Protective</span>) determinants of mortality. Click dot for details.</h5>"),
-        NULL
-      )
-    }
-    else {
-      tagList(
-        tags$h3(
-          title="Each factor is rated as Destructive, meaning that it has a positive correlation with the risk group; or Protective, meaning it has a negative correlation with the risk group. MortalityMinder shows those factors which have the highest absolute correlation with mortality risk groups. For more information on the method of determining correlation please see GitHub Wiki.",
-          paste0("Factors Associated with ",names(which(cause.list == input$death_cause)), " for ", names(which(state.list == input$state_choice))), 
-          icon("info-circle")
-        ),
-        HTML("<h5>Kendall Correlation between social and economic factors and mortality risk groups. <span style='color:#f8766d'>Positively</span> (<span style='color:#00bfc4'>Negatively</span>) correlated factors indicate potential <span style='color:#f8766d'>Destructive</span> (<span style='color:#00bfc4'>Protective</span>) determinants of mortality. Click dot for details.</h5>"),
-        NULL
-      )
-    }
-  })
-  
   # Determinant Header (upper-center panel, Page 2)
   output$textDeterminants3 <- renderUI({
     # We reference state.list, cause.list and cause.definitions defined above
@@ -1275,141 +1246,8 @@ server <- function(input, output, session) {
     }
   }, bg = "transparent")
   
-  draw_border <- function(plot.name, border){
-    proxy <- leafletProxy(plot.name)
-    #remove any previously highlighted polygon
-    proxy %>% clearGroup("highlighted_polygon")
-    
-    #add a slightly thicker red polygon on top of the selected one
-    proxy %>% addPolylines(stroke = TRUE, 
-                           weight = 4,
-                           color="black",
-                           data = border,
-                           group="highlighted_polygon",
-                           dashArray = "4 2 4")
-  }
-  
-  highlight_county <- function(event){
-    county_name <- sub(event$id, pattern = " [[:alpha:]]*$", replacement = "")
-    
-    county_indices <- which(state_map@data$NAME %in% c(county_name))
-    
-    if (length(county_indices) == 0){
-      for (current_polygons in state_map@polygons){
-        for (current_polygon in current_polygons@Polygons){
-          current_coords <- current_polygon@coords
-          if (sp::point.in.polygon(c(event$lng), c(event$lat), current_coords[,1], current_coords[,2])){
-            assign("county_polygon", current_polygons, envir = .GlobalEnv)
-            break
-          }
-        }
-      }
-    }else if (length(county_indices) == 1){
-      assign("county_polygon", state_map@polygons[[county_indices[[1]]]], envir = .GlobalEnv)
-    } else {
-      for (index in county_indices){
-        current_polygon <- state_map@polygons[[index]]
-        current_coords <- current_polygon@Polygons[[1]]@coords
-        if (sp::point.in.polygon(c(event$lng), c(event$lat), current_coords[,1], current_coords[,2])){
-          assign("county_polygon", current_polygon, envir = .GlobalEnv)
-          break
-        }
-      }
-    }
-    draw_border("geo_cluster_kmean", county_polygon)
-    draw_border("geo_mort_change2", county_polygon)
-    draw_border("determinants_plot5", county_polygon)
-  }
-  
-  # click on geo cluster map shows county data on mort_line
-  observe({
-    event <- input$geo_cluster_kmean_shape_click
-    if (is.null(event))
-      return()
-    highlight_county(event)
-    county_choice(event$id)
-    updatePickerInput(session, "county_drop_choice", selected = gsub(" County", "", event$id))
-  })
-  
-  observe({
-    event <- input$geo_mort_change2_shape_click
-    if (is.null(event))
-      return()
-    highlight_county(event)
-    county_choice(event$id)
-    updatePickerInput(session, "county_drop_choice", selected = gsub(" County", "", event$id))
-  })
-  
-  observe({
-    event <- input$determinants_plot5_shape_click
-    if (is.null(event))
-      return()
-    highlight_county(event)
-    county_choice(paste0(event$id," County"))
-    updatePickerInput(session, "county_drop_choice", selected = event$id)
-  })
-  
-  observe({
-    county_name <- sub(county_choice(), pattern = " [[:alpha:]]*$", replacement = "")
-    req(county_name)
-    county_indices <- which(state_map@data$NAME %in% c(county_name))
-    
-    if (length(county_indices) != 1){
-      all.county = state_map@data$NAME
-      highest.score = - Inf
-      polygon = NULL
-      for (index in seq(1, length(all.county))){
-        county = all.county[[index]]
-        curr.score =  stringdist::stringsim(county, county_name)
-        if (curr.score > highest.score){
-          highest.score = curr.score
-          polygon = state_map@polygons[[index]]
-        }
-      }
-    } else {
-      polygon <- state_map@polygons[[county_indices[[1]]]] 
-    }
-    
-    draw_border("geo_cluster_kmean", polygon)
-    draw_border("geo_mort_change2", polygon)
-    draw_border("determinants_plot5", polygon)
-  })
-  
-  observe({
-    event <- input$determinants_plot3_click
-    req(event)
-    
-    geo.namemap$county_fips <- with_options(c(scipen = 999), str_pad(geo.namemap$county_fips, 5, pad = "0"))
-    geo.namemap <- geo.namemap[geo.namemap$state_abbr != "HI",]
-    geo.namemap <- rbind(geo.namemap, c("Hawaii", "HI", "15", "Hawaii", "15001"), c("Hawaii", "HI", "15", "Honolulu", "15003"), c("Hawaii", "HI", "15", "Kalawao", "15005"), c("Hawaii", "HI", "15", "Kauai", "15007"), c("Hawaii", "HI", "15", "Maui", "15009"))
-    sd.code = chr.namemap.inv.2019[input$determinant_choice, "code"]
-    sd.select <- chr.data.2019 %>% 
-      dplyr::select(county_fips, VAR = sd.code) %>% 
-      dplyr::right_join(mort.cluster.ord(), by = "county_fips") %>% 
-      dplyr::inner_join(geo.namemap, by = "county_fips") %>%
-      tidyr::drop_na()
-    
-    
-    data <- dplyr::filter(
-      cdc.data,
-      period == "2015-2017", 
-      death_cause == input$death_cause
-    ) %>% 
-      dplyr::select(county_fips, death_rate) %>% 
-      dplyr::inner_join(sd.select, by = "county_fips") %>% 
-      tidyr::drop_na()
-    
-    
-    point <- nearPoints(data, event, threshold = 5, maxpoints = 1, addDist = TRUE)
-    
-    if (nrow(point) == 0) return(NULL)
-    
-    county_name = point$county_name
-    county_choice(paste0(county_name, " County"))
-    
-    updatePickerInput(session, "county_drop_choice", selected = point$county_name)
-    
-  })
+
+
   
   # click on bar plot triggers page change
   observe({
@@ -1424,18 +1262,7 @@ server <- function(input, output, session) {
     
     updatePickerInput(session, "determinant_choice", selected = point$chr_code)
   })
-  
-  # click on bar plot triggers page change
-  observe({
-    req(input$page2_bar_plot_click) # Same as if-not-NULL
-    click <- input$page2_bar_plot_click
-    
-    point <- nearPoints(kendall_cor_new, click, threshold = 50, maxpoints = 1, addDist = TRUE)
-    
-    if (nrow(point) == 0) return(NULL)
-    
-    updatePickerInput(session, "determinant_choice", selected = point$chr_code)
-  })
+
   }
 
 shinyApp(ui = ui, server = server)
