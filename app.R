@@ -67,35 +67,11 @@ ui_list[["Page1"]] <- fluidPage(
     tags$div(
       class = "input",
       tags$h3(id = "input_text2", "State:"),
-      pickerInput(
-        inputId = "p1_state_choice",
-        label = h4("State"), 
-        choices = state.list,
-        selected = "OH",
-        multiple = TRUE,
-        options = list(
-          `live-search` = TRUE,
-          "dropup-auto" = FALSE,
-          `max-options` = 1
-        )      
-      ),
+      uiOutput("p1_state_selector"),
       tags$h3(id = "input_text1", "Cause of Death:"),
-      pickerInput(
-        inputId = "p1_death_cause",
-        label = h4("Cause of Death"),
-        choices = cause.list,
-        selected = "Despair",
-        choicesOpt = list(
-          subtext = c(" "," "," ","Self-Harm and some other causes"),
-          "dropup-auto" = FALSE
-        )
-      )
+      uiOutput("p1_death_selector")
       
     )
-    
-    
-    
-    
   ),
   
   tags$div(
@@ -258,29 +234,9 @@ ui_list[["Page2"]] <- fluidPage(
     tags$div(
       class = "input",
       tags$h3(id = "input_text2", "State:"),
-      pickerInput(
-        inputId = "p2_state_choice",
-        label = h4("State"), 
-        choices = state.list,
-        selected = NULL,
-        multiple = TRUE,
-        options = list(
-          `live-search` = TRUE,
-          "dropup-auto" = FALSE,
-          `max-options` = 1
-        )      
-      ),
+      uiOutput("p2_state_selector"),
       tags$h3(id = "input_text1", "Cause of Death:"),
-      pickerInput(
-        inputId = "p2_death_cause",
-        label = h4("Cause of Death"),
-        choices = cause.list,
-        selected = "Despair",
-        choicesOpt = list(
-          subtext = c(" "," "," ","Self-Harm and some other causes"),
-          "dropup-auto" = FALSE
-        )
-      ),
+      uiOutput("p2_death_selector"),
       tags$script(src = "jquery-ui.min.js"),
       tags$script(src = "fullpage.js"),
       tags$script(src = "jquery.ba-outside-events.js"),
@@ -407,29 +363,9 @@ ui_list[["Page3"]] <- fluidPage(
     tags$div(
       class = "input",
       tags$h3(id = "input_text2", "State:"),
-      pickerInput(
-        inputId = "p3_state_choice",
-        label = h4("State"), 
-        choices = state.list,
-        selected = NULL,
-        multiple = TRUE,
-        options = list(
-          `live-search` = TRUE,
-          "dropup-auto" = FALSE,
-          `max-options` = 1
-        )      
-      ),
+      uiOutput("p3_state_selector"),
       tags$h3(id = "input_text1", "Cause of Death:"),
-      pickerInput(
-        inputId = "p3_death_cause",
-        label = h4("Cause of Death"),
-        choices = cause.list,
-        selected = "Despair",
-        choicesOpt = list(
-          subtext = c(" "," "," ","Self-Harm and some other causes"),
-          "dropup-auto" = FALSE
-        )
-      ),
+      uiOutput("p3_death_selector"),
       tags$script(src = "jquery-ui.min.js"),
       tags$script(src = "fullpage.js"),
       tags$script(src = "jquery.ba-outside-events.js"),
@@ -574,29 +510,9 @@ ui_list[["Page4"]] <- fluidPage(
     tags$div(
       class = "input",
       tags$h3(id = "input_text2", "State:"),
-      pickerInput(
-        inputId = "p4_state_choice",
-        label = h4("State"), 
-        choices = state.list,
-        selected = NULL,
-        multiple = TRUE,
-        options = list(
-          `live-search` = TRUE,
-          "dropup-auto" = FALSE,
-          `max-options` = 1
-        )      
-      ),
+      uiOutput("p4_state_selector"),
       tags$h3(id = "input_text1", "Cause of Death:"),
-      pickerInput(
-        inputId = "p4_death_cause",
-        label = h4("Cause of Death"),
-        choices = cause.list,
-        selected = "Despair",
-        choicesOpt = list(
-          subtext = c(" "," "," ","Self-Harm and some other causes"),
-          "dropup-auto" = FALSE
-        )
-      ),
+      uiOutput("p4_death_selector"),
       tags$script(src = "jquery-ui.min.js"),
       tags$script(src = "fullpage.js"),
       tags$script(src = "jquery.ba-outside-events.js"),
@@ -810,9 +726,12 @@ serv_calc <- list()
 # well as create a universal state_choice value. Each observeEvent checks for
 # a picker to change, then it updates each other page's picker
 serv_calc[[1]] <- function(calc, session) {
-  # if(!exists("calc$state_choice")) {
-  #   calc$state_choice <- "OH"
-  #  }
+  if(!exists("calc$state_choice")) {
+    calc$state_choice <- "OH"
+  }
+  if(!exists("calc$death_cause")) {
+    calc$death_cause <- "Despair"
+  }
 }  
 
 serv_calc[[2]] <- function(calc, session) {
@@ -859,8 +778,7 @@ serv_calc[[3]] <- function(calc, session) {
     
   })
   
-  observe({
-    #calc$state_choice
+  observeEvent(calc$death_cause, {
     updatePickerInput(session,"p1_death_cause", select = calc$death_cause)
     updatePickerInput(session, "p2_death_cause", select = calc$death_cause)
     updatePickerInput(session, "p3_death_cause", select = calc$death_cause)
@@ -1243,6 +1161,142 @@ serv_calc[[21]] <- function(calc, session) {
 
 
 serv_out <- list()
+
+serv_out[["p1_death_selector"]] <- function(calc, session) {
+  renderUI({
+    pickerInput(
+      inputId = "p1_death_cause",
+      label = h4("Cause of Death"), 
+      choices = cause.list,
+      selected = NULL,
+      multiple = TRUE,
+      options = list(
+        `live-search` = TRUE,
+        "dropup-auto" = FALSE,
+        `max-options` = 1
+      )      
+    )
+  })
+}
+
+serv_out[["p2_death_selector"]] <- function(calc, session) {
+  renderUI({
+    pickerInput(
+      inputId = "p2_death_cause",
+      label = h4("Cause of Death"), 
+      choices = cause.list,
+      selected = NULL,
+      multiple = TRUE,
+      options = list(
+        `live-search` = TRUE,
+        "dropup-auto" = FALSE,
+        `max-options` = 1
+      )      
+    )
+  })
+}
+
+serv_out[["p3_death_selector"]] <- function(calc, session) {
+  renderUI({
+    pickerInput(
+      inputId = "p3_death_cause",
+      label = h4("Cause of Death"), 
+      choices = cause.list,
+      selected = NULL,
+      multiple = TRUE,
+      options = list(
+        `live-search` = TRUE,
+        "dropup-auto" = FALSE,
+        `max-options` = 1
+      )      
+    )
+  })
+}
+
+serv_out[["p4_death_selector"]] <- function(calc, session) {
+  renderUI({
+    pickerInput(
+      inputId = "p4_death_cause",
+      label = h4("Cause of Death"), 
+      choices = cause.list,
+      selected = NULL,
+      multiple = TRUE,
+      options = list(
+        `live-search` = TRUE,
+        "dropup-auto" = FALSE,
+        `max-options` = 1
+      )      
+    )
+  })
+}
+
+serv_out[["p1_state_selector"]] <- function(calc, session) {
+  renderUI({
+    pickerInput(
+      inputId = "p1_state_choice",
+      label = h4("State"), 
+      choices = state.list,
+      selected = NULL,
+      multiple = TRUE,
+      options = list(
+        `live-search` = TRUE,
+        "dropup-auto" = FALSE,
+        `max-options` = 1
+      )      
+    )
+  })
+}
+
+serv_out[["p2_state_selector"]] <- function(calc, session) {
+  renderUI({
+    pickerInput(
+      inputId = "p2_state_choice",
+      label = h4("State"), 
+      choices = state.list,
+      selected = NULL,
+      multiple = TRUE,
+      options = list(
+        `live-search` = TRUE,
+        "dropup-auto" = FALSE,
+        `max-options` = 1
+      )      
+    )
+  })
+}
+
+serv_out[["p3_state_selector"]] <- function(calc, session) {
+  renderUI({
+    pickerInput(
+      inputId = "p3_state_choice",
+      label = h4("State"), 
+      choices = state.list,
+      selected = NULL,
+      multiple = TRUE,
+      options = list(
+        `live-search` = TRUE,
+        "dropup-auto" = FALSE,
+        `max-options` = 1
+      )      
+    )
+  })
+}
+
+serv_out[["p4_state_selector"]] <- function(calc, session) {
+  renderUI({
+    pickerInput(
+      inputId = "p4_state_choice",
+      label = h4("State"), 
+      choices = state.list,
+      selected = NULL,
+      multiple = TRUE,
+      options = list(
+        `live-search` = TRUE,
+        "dropup-auto" = FALSE,
+        `max-options` = 1
+      )      
+    )
+  })
+}
 
 serv_out[["page1_main_header"]] <- function(calc, session) {
   renderUI({
