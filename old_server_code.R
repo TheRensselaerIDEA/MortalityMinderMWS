@@ -829,21 +829,6 @@ server <- function(input, output, session) {
   
 
 
-  
-  # # click on bar plot triggers page change
-  # observe({
-  #   req(input$page1_bar_plot_click) # Same as if-not-NULL
-  #   click <- input$page1_bar_plot_click
-  #   
-  #   js$nextpage()
-  #   
-  #   point <- nearPoints(kendall_cor_new, click, threshold = 50, maxpoints = 1, addDist = TRUE)
-  #   
-  #   if (nrow(point) == 0) return(NULL)
-  #   
-  #   updatePickerInput(session, "determinant_choice", selected = point$chr_code)
-  # })
-  # 
-  # }
+}
 
 shinyApp(ui = ui, server = server)
