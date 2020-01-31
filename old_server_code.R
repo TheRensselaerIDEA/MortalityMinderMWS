@@ -1,9 +1,9 @@
 server <- function(input, output, session) {
-
   
-
   
-
+  
+  
+  
   
   
   
@@ -148,15 +148,15 @@ server <- function(input, output, session) {
     )
   })
   
-
-
   
-
+  
+  
+  
   
   
   # ----------------------------------------------------------------------
-
-
+  
+  
   # 
   # update.county.fips <- function(value) {
   #   if (!is.na(value) & nchar(value) == 4) {
@@ -185,9 +185,9 @@ server <- function(input, output, session) {
   #   }
   # })
   # 
-
   
-
+  
+  
   
   # Gives information about county population and urbanness
   output$county_desc <- renderUI({
@@ -287,7 +287,7 @@ server <- function(input, output, session) {
     
   })
   
-
+  
   
   generate_text <- function(name, diff_pct){
     change_text <- paste0("The mortality rate \nhas ")
@@ -540,9 +540,24 @@ server <- function(input, output, session) {
     line_plot
   }, bg="transparent")
   
-
   
-
+  
+  output$textMortFactsNew <- renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    
+    tagList(
+      tags$h4(
+        title ="Midlife mortality rates are obtained from the CDC WONDER Detailed Mortality Online Mortality Database.  Separate crude death rates are queried  for adults 25 to 64 at the county, state, and nationwide levels for each cause of death.  Rates are not age adjusted. Unreliable or missing rates are imputed. See Project Overview for details.",
+        paste0("Midlife Mortality Rate: Deaths per 100,000 for adults ages 25-64 due to ",
+               names(which(cause.list == input$death_cause)), 
+               " for three year periods for counties (left) and state and nation (right)."
+        ), icon("info-circle")
+      ),
+      HTML("<h5>Data Source: CDC WONDER<br>Analysis: The Rensselaer Institute for Data Exploration and Applications 
+           (<a href='http://idea.rpi.edu' target=_Blank>The Rensselaer IDEA</a>)</h5>")
+      )
+  })
+  
   output$textInfographicTitle <- renderUI({
     # We reference state.list, cause.list and cause.definitions defined above
     
@@ -707,7 +722,7 @@ server <- function(input, output, session) {
     )
   })
   
-
+  
   
   # Determinant Header (upper-center panel, Page 2)
   output$textDeterminants3 <- renderUI({
@@ -723,8 +738,8 @@ server <- function(input, output, session) {
     )
   })
   
-
-
+  
+  
   
   # Determinant geo Header (upper-center panel, Page 2)
   output$textDeterminantsGeo <- renderUI({
@@ -761,7 +776,7 @@ server <- function(input, output, session) {
   #     )
   # })
   
-
+  
   
   # # Mortality Trend Cluster by County
   # # TODO: Replace this with a social determinant map!
@@ -812,8 +827,9 @@ server <- function(input, output, session) {
   })
   
   
+  
+  
+  
 
-
-}
-
-shinyApp(ui = ui, server = server)
+  
+  shinyApp(ui = ui, server = server)

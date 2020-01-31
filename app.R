@@ -1153,6 +1153,21 @@ serv_calc[[21]] <- function(calc, session) {
   })
 }
 
+  # click on bar plot triggers page change
+serv_calc[[22]] <- function(calc, session) {
+  observe({
+    req(calc$page1_bar_plot_click) # Same as if-not-NULL
+    click <- calc$page1_bar_plot_click
+    
+
+    point <- nearPoints(kendall_cor_new, click, threshold = 50, maxpoints = 1, addDist = TRUE)
+    
+    if (nrow(point) == 0) return(NULL)
+    
+    updatePickerInput(session, "determinant_choice", selected = point$chr_code)
+  })
+}
+
 
 #######################################################################
 ######################### Server Output ###############################
