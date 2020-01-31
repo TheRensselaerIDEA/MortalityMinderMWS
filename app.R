@@ -665,13 +665,13 @@ ui_list[["Page4"]] <- fluidPage(
   tags$script(src = "fullpage.js"),
   tags$script(src = "jquery.ba-outside-events.js"),
   includeScript(path = "myscript.js")
-)
+                        )
 
 draw_border <- function(plot.name, border){
   proxy <- leafletProxy(plot.name)
   # remove any previously highlighted polygon
   proxy %>% clearGroup("highlighted_polygon")
-
+  
   #add a slightly thicker red polygon on top of the selected one
   proxy %>% addPolylines(stroke = TRUE,
                          weight = 4,
@@ -883,8 +883,8 @@ serv_calc[[9]] <- function(calc, session) {
            "All Cause" = {
              death_rate <- c(366.07178, 373.10366, 373.65807, 373.40143, 379.60383, 395.93077)
            })
-
-
+    
+    
     nation.dataframe <- data.frame(
       period = c("2000-2002", "2003-2005", "2006-2008", "2009-2011", "2012-2014", "2015-2017"),
       cluster = rep("National", 6),
@@ -925,14 +925,14 @@ serv_calc[[10]] <- function(calc, session) {
   })
 }
 
-  # Cache of UNORDERED mortality trend cluster label calculation
+# Cache of UNORDERED mortality trend cluster label calculation
 serv_calc[[11]] <- function(calc, session) {
   calc$mort.cluster.raw <- reactive({
-
+    
     # Variables:
     #   - county_fips
     #   - cluster
-
+    
     if (calc$state_choice == "United States"){
       # Currently hard-coded 6 clusters
       n.clusters <- n.clusters.nation
@@ -957,20 +957,20 @@ serv_calc[[11]] <- function(calc, session) {
   })
 }
 
-  # Cache of Weighed Avg by UNORDERED cluster
+# Cache of Weighed Avg by UNORDERED cluster
 serv_calc[[12]] <- function(calc, session) {
   calc$mort.avg.cluster.raw <- reactive({
-
+    
     # Variables:
     #   - period
     #   - cluster
     #   - death_rate
     #   - count
-
+    
     # Notes:
     #   - The cluster labels are UNORDERED
-
-
+    
+    
     get.cluster.deathrate.during.time(
       calc$mort.cluster.raw(),
       cdc.data,
@@ -979,27 +979,27 @@ serv_calc[[12]] <- function(calc, session) {
   })
 }
 
-  # Cache of MAPPING from UNORDERED mortality trend label to ORDERED mortality trend label
+# Cache of MAPPING from UNORDERED mortality trend label to ORDERED mortality trend label
 serv_calc[[13]] <- function(calc, session) {
   calc$mort.cluster.map <- reactive({
-
+    
     # Variables:
     #   - ord
-
+    
     # Notes:
     #   - This is a mapping from raw cluster label to ORDERED cluster.
     #       Row names are the original cluster and `ord` are the reordered cluster
-
+    
     get.cluster.order.map(calc$mort.avg.cluster.raw(), time.period = "2015-2017")
   })
-
+  
   # Cache of ORDERED mortality trend cluster label calculation
   calc$mort.cluster.ord <- reactive({
-
+    
     # Variables:
     #   - county_fips
     #   - cluster
-
+    
     order.county.clusters(calc$mort.cluster.raw(), calc$mort.cluster.map())
   })
 }
@@ -1023,7 +1023,7 @@ serv_calc[[14]] <- function(calc, session) {
 
 serv_calc[[15]] <-function(calc, session) {
   calc$rv_county_drop_choice <- reactive({})
-
+  
   calc$county_event <- observeEvent(calc$county_drop_choice, {
     calc$rv_county_drop_choice <- calc$county_drop_choice
     calc$county_choice(paste0(calc$rv_county_drop_choice, " County"))
@@ -1045,7 +1045,7 @@ serv_calc[[16]] <- function(calc, session) {
     updatePickerInput(session, "county_drop_choice", selected = gsub(" County", "", event$id))
   })
 }
-  
+
 
 serv_calc[[17]] <- function(calc, session) {
   observe({
@@ -1076,7 +1076,7 @@ serv_calc[[19]] <- function(calc, session) {
     county_name <- sub(calc$county_choice(), pattern = " [[:alpha:]]*$", replacement = "")
     req(county_name)
     county_indices <- which(state_map@data$NAME %in% c(county_name))
-
+    
     if (length(county_indices) != 1){
       all.county = state_map@data$NAME
       highest.score = - Inf
@@ -1092,7 +1092,7 @@ serv_calc[[19]] <- function(calc, session) {
     } else {
       polygon <- state_map@polygons[[county_indices[[1]]]]
     }
-
+    
     draw_border("geo_cluster_kmean", polygon)
     draw_border("geo_mort_change2", polygon)
     draw_border("determinants_plot5", polygon)
@@ -1104,7 +1104,7 @@ serv_calc[[20]] <- function(calc, session) {
   observe({
     event <- calc$determinants_plot3_click
     req(event)
-
+    
     geo.namemap$county_fips <- with_options(c(scipen = 999), str_pad(geo.namemap$county_fips, 5, pad = "0"))
     geo.namemap <- geo.namemap[geo.namemap$state_abbr != "HI",]
     geo.namemap <- rbind(geo.namemap, c("Hawaii", "HI", "15", "Hawaii", "15001"), c("Hawaii", "HI", "15", "Honolulu", "15003"), c("Hawaii", "HI", "15", "Kalawao", "15005"), c("Hawaii", "HI", "15", "Kauai", "15007"), c("Hawaii", "HI", "15", "Maui", "15009"))
@@ -1114,8 +1114,8 @@ serv_calc[[20]] <- function(calc, session) {
       dplyr::right_join(calc$mort.cluster.ord(), by = "county_fips") %>%
       dplyr::inner_join(geo.namemap, by = "county_fips") %>%
       tidyr::drop_na()
-
-
+    
+    
     data <- dplyr::filter(
       cdc.data,
       period == "2015-2017",
@@ -1124,22 +1124,22 @@ serv_calc[[20]] <- function(calc, session) {
       dplyr::select(county_fips, death_rate) %>%
       dplyr::inner_join(sd.select, by = "county_fips") %>%
       tidyr::drop_na()
-
-
+    
+    
     point <- nearPoints(data, event, threshold = 5, maxpoints = 1, addDist = TRUE)
-
+    
     if (nrow(point) == 0) return(NULL)
-
+    
     county_name = point$county_name
     calc$county_choice(paste0(county_name, " County"))
-
+    
     updatePickerInput(session, "county_drop_choice", selected = point$county_name)
-
+    
   })
 }
 
-  
-  # click on bar plot triggers page change
+
+# click on bar plot triggers page change
 serv_calc[[21]] <- function(calc, session) {
   observe({
     req(calc$page2_bar_plot_click) # Same as if-not-NULL
@@ -1149,20 +1149,6 @@ serv_calc[[21]] <- function(calc, session) {
     
     if (nrow(point) == 0) return(NULL)
     
-    updatePickerInput(session, "determinant_choice", selected = point$chr_code)
-  })
-}
-
-# click on bar plot triggers page change
-serv_calc[[22]] <- function(calc, session) {
-  observe({
-    req(calc$page1_bar_plot_click) # Same as if-not-NULL
-    click <- calc$page1_bar_plot_click
-
-    point <- nearPoints(kendall_cor_new, click, threshold = 50, maxpoints = 1, addDist = TRUE)
-
-    if (nrow(point) == 0) return(NULL)
-
     updatePickerInput(session, "determinant_choice", selected = point$chr_code)
   })
 }
@@ -1510,7 +1496,7 @@ serv_out[["determinant_corr"]] <-function(calc, session) {
     if (nrow(calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]) == 0) {
       return("")
     }
-
+    
     if (calc$kendall.cor()[calc$kendall.cor()$chr_code == calc$determinant_choice,]$kendall_cor >= 0) {
       return(paste0("Kendall Correlation with ",
                     calc$death_cause,
@@ -1830,24 +1816,24 @@ serv_out[["textBoxplotTitle"]] <- function(calc, session) {
 
 serv_out[["determinants_plot3"]] <-function(calc, session) {
   renderPlot({
-
+    
     geo.namemap$county_fips <- with_options(c(scipen = 999), str_pad(geo.namemap$county_fips, 5, pad = "0"))
     geo.namemap <- geo.namemap[geo.namemap$state_abbr != "HI",]
     geo.namemap <- rbind(geo.namemap, c("Hawaii", "HI", "15", "Hawaii", "15001"), c("Hawaii", "HI", "15", "Honolulu", "15003"), c("Hawaii", "HI", "15", "Kalawao", "15005"), c("Hawaii", "HI", "15", "Kauai", "15007"), c("Hawaii", "HI", "15", "Maui", "15009"))
-
+    
     sd.code = chr.namemap.inv.2019[calc$determinant_choice, "code"]
     sd.select <- chr.data.2019 %>%
       dplyr::select(county_fips, VAR = sd.code) %>%
       dplyr::right_join(calc$mort.cluster.ord(), by = "county_fips") %>%
       dplyr::inner_join(geo.namemap, by = "county_fips") %>%
       tidyr::drop_na()
-
+    
     if (nrow(sd.select) == 0) {
       ggplot() +
         ggtitle("Error: sd.select is empty. Aborting dot plot creation.")
-
+      
     } else if (nrow(sd.select) <= 6){
-
+      
       sd.select$County <- sd.select$county_name
       dplyr::filter(
         cdc.data,
@@ -1873,10 +1859,10 @@ serv_out[["determinants_plot3"]] <-function(calc, session) {
           #c("#ffc4c4", "#ff8f8f", "#ff5454", "#ff1414", "#a80000")
           values = colorRampPalette(
             c("#fef0d9","#fdcc8a","#fc8d59","#e34a33")
-
+            
           )(nrow(sd.select))
         )
-
+      
     } else if(calc$state_choice == "United States"){
       dplyr::filter(
         cdc.data,
@@ -1886,7 +1872,7 @@ serv_out[["determinants_plot3"]] <-function(calc, session) {
         dplyr::select(county_fips, death_rate) %>%
         dplyr::inner_join(sd.select, by = "county_fips") %>%
         tidyr::drop_na() %>%
-
+        
         ggplot(aes(x = death_rate, y = VAR)) +
         #geom_point(colour="#565254", shape=21, size = 3, alpha = .7,
         #aes(fill = cluster)) +
@@ -1901,9 +1887,9 @@ serv_out[["determinants_plot3"]] <-function(calc, session) {
         guides(color = guide_legend(override.aes = list(shape = 15))) +
         color.line.cluster(calc$state_choice, max(sd.select$cluster)) +
         scale_fill_manual(name="Risk Group:", values = theme.categorical.colors(max(calc$mort.cluster.ord()$cluster)))
-
+      
     } else {
-
+      
       data <- dplyr::filter(
         cdc.data,
         period == "2015-2017",
@@ -1912,11 +1898,11 @@ serv_out[["determinants_plot3"]] <-function(calc, session) {
         dplyr::select(county_fips, death_rate) %>%
         dplyr::inner_join(sd.select, by = "county_fips") %>%
         tidyr::drop_na()
-
+      
       data$cluster[data$cluster == 1] <- "1: Low"
       data$cluster[data$cluster == 2] <- "2: Medium"
       data$cluster[data$cluster == 3] <- "3: High"
-
+      
       plot <- data %>%
         ggplot(aes(x = death_rate, y = VAR)) +
         geom_point(colour="#565254", shape=21, size = 3, alpha = .7,
@@ -1932,8 +1918,8 @@ serv_out[["determinants_plot3"]] <-function(calc, session) {
         guides(color = guide_legend(override.aes = list(shape = 15))) +
         color.line.cluster(calc$state_choice, max(sd.select$cluster)) +
         scale_fill_manual(name="Risk Group:", values = theme.categorical.colors(max(calc$mort.cluster.ord()$cluster)))
-
-
+      
+      
       if (is.null(calc$county_choice())){
         plot
       }else{
@@ -1941,7 +1927,7 @@ serv_out[["determinants_plot3"]] <-function(calc, session) {
           data,
           county_name == substr(calc$county_choice(), 0, nchar(calc$county_choice())-7)
         )
-
+        
         if (nrow(county_data) == 0) {
           plot + xlab("Midlife Mortality Rate (2015-2017)\nCould not plot county as data suppressed")
         } else {
@@ -1960,7 +1946,7 @@ serv_out[["determinants_plot3"]] <-function(calc, session) {
   }, bg = "transparent")
 }
 
-  # Implementation of hover (08 Oct 2019)
+# Implementation of hover (08 Oct 2019)
 serv_out[["hover_info"]] <- function(calc, session) {
   renderUI({
     req(calc$plot_hover) # Same as if-not-NULL
@@ -2049,9 +2035,9 @@ serv_out[["determinants_plot3_county_name"]] <- function(calc, session) {
     
   })
 }
-  
-  
-  # Scatterplot Header (lower-center panel, Page 3)
+
+
+# Scatterplot Header (lower-center panel, Page 3)
 serv_out[["textScatterplotTitle"]] <- function(calc, session) {
   renderUI({
     # We reference state.list, cause.list and cause.definitions defined above
@@ -2116,8 +2102,8 @@ serv_out[["textCountyPrompt"]] <- function(calc, session) {
   })
 }
 
-  # Geo-plot of selected determinant for selected county
-  # Based on scatterplot
+# Geo-plot of selected determinant for selected county
+# Based on scatterplot
 serv_out[["determinants_plot5"]] <- function(calc, session) {
   renderLeaflet({
     
@@ -2171,7 +2157,7 @@ serv_out[["determinants_plot5"]] <- function(calc, session) {
   })
 }
 
-  # Determinant Header (upper-left panel, Page 2)
+# Determinant Header (upper-left panel, Page 2)
 serv_out[["textDeterminants2"]] <- function(calc, session) {
   renderUI({
     # We reference state.list, cause.list and cause.definitions defined above
@@ -2201,7 +2187,7 @@ serv_out[["textDeterminants2"]] <- function(calc, session) {
   })
 }
 
-  # Mortality Trend Cluster by County
+# Mortality Trend Cluster by County
 serv_out[["geo_cluster_kmean"]] <- function(calc, session) {
   renderLeaflet({
     
@@ -2215,8 +2201,8 @@ serv_out[["geo_cluster_kmean"]] <- function(calc, session) {
   })
 }
 
-  
-  # Cluster geo Header (Page 2 lower middle)
+
+# Cluster geo Header (Page 2 lower middle)
 serv_out[["textClusterGeo"]] <- function(calc, session) {
   renderUI({
     # We reference state.list, cause.list and cause.definitions defined above
@@ -2247,7 +2233,7 @@ serv_out[["textClusterGeo"]] <- function(calc, session) {
 }
 
 
-  # Mortality Rate by County Period 2
+# Mortality Rate by County Period 2
 serv_out[["geo_mort_change2"]] <- function(calc, session) {
   renderLeaflet({
     if(calc$state_choice == "United States"){
@@ -2272,7 +2258,7 @@ serv_out[["geo_mort_change2"]] <- function(calc, session) {
 }
 
 
-  # Kendall Correlation Between Cluster and CHR-SD
+# Kendall Correlation Between Cluster and CHR-SD
 serv_out[["page1.bar.cor1"]] <- function(calc, session) {
   renderPlot({
     
@@ -2363,8 +2349,8 @@ serv_out[["page1.bar.cor1"]] <- function(calc, session) {
     }
   }, bg = "transparent")
 }
-  
-  # Determinant Header (upper-right panel, Page 1)
+
+# Determinant Header (upper-right panel, Page 1)
 serv_out[["textDeterminants"]] <- function(calc, session) {
   renderUI({
     # We reference state.list, cause.list and cause.definitions defined above
@@ -2395,7 +2381,7 @@ serv_out[["textDeterminants"]] <- function(calc, session) {
 }
 
 
-  # Mortality Rate Trend Line Graph
+# Mortality Rate Trend Line Graph
 serv_out[["mort_line"]] <- function(calc, session) {
   renderPlot({
     
@@ -2633,9 +2619,9 @@ serv_out[["mort_line"]] <- function(calc, session) {
     
   },bg="transparent")
 }
-  
 
-  
+
+
 # ----------------------------------------------------------------------
 #   # Functions for data download
 #   
