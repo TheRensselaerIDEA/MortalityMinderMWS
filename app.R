@@ -728,6 +728,11 @@ serv_calc <- list()
 serv_calc[[1]] <- function(calc, session) {
   if(!exists("calc$state_choice")) {
     calc$state_choice <- "OH"
+    # updatePickerInput(session,"p1_state_choice", select = calc$state_choice) # the updating observe below
+    # updatePickerInput(session,"p2_state_choice", select = calc$state_choice) # counts on each state_choice to
+    # updatePickerInput(session,"p3_state_choice", select = calc$state_choice) # not be null, so this is updates
+    # updatePickerInput(session,"p4_state_choice", select = calc$state_choice) # them all and gives them a value out the gate
+    
   }
   if(!exists("calc$death_cause")) {
     calc$death_cause <- "Despair"
@@ -735,29 +740,30 @@ serv_calc[[1]] <- function(calc, session) {
 }  
 
 serv_calc[[2]] <- function(calc, session) {
-  observeEvent(calc$p1_state_choice, {
+  observe({
     calc$state_choice <- calc$p1_state_choice
-    
   })
-  observeEvent(calc$p2_state_choice, {
+  observe({
     calc$state_choice <- calc$p2_state_choice
   })
-  observeEvent(calc$p3_state_choice, {
+  observe({
     calc$state_choice <- calc$p3_state_choice
   })
-  observeEvent(calc$p4_state_choice, {
+  observe({
     calc$state_choice <- calc$p4_state_choice
   })
+
+  calc$update_stuff <- reactiveTimer(2000)
   
-  observeEvent(calc$state_choice,{
-    updatePickerInput(session,"p1_state_choice", select = calc$state_choice)
-    updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
-    updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
-    updatePickerInput(session, "p4_state_choice", select = calc$state_choice)
-    
+  observe({
+    calc$update_stuff()
+    #calc$state_choice
+  
+    updatePickerInput(session,"p1_state_choice", select = isolate(calc$state_choice))
+    updatePickerInput(session,"p2_state_choice", select = isolate(calc$state_choice))
+    updatePickerInput(session,"p3_state_choice", select = isolate(calc$state_choice))
+    updatePickerInput(session,"p4_state_choice", select = isolate(calc$state_choice))
   })
-  
-  
 }
 
 serv_calc[[3]] <- function(calc, session) {
@@ -2633,6 +2639,25 @@ serv_out[["mort_line"]] <- function(calc, session) {
     }
     
   },bg="transparent")
+}
+
+
+serv_out[["textMortFactsNew"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    
+    tagList(
+      tags$h4(
+        title ="Midlife mortality rates are obtained from the CDC WONDER Detailed Mortality Online Mortality Database.  Separate crude death rates are queried  for adults 25 to 64 at the county, state, and nationwide levels for each cause of death.  Rates are not age adjusted. Unreliable or missing rates are imputed. See Project Overview for details.",
+        paste0("Midlife Mortality Rate: Deaths per 100,000 for adults ages 25-64 due to ",
+               names(which(cause.list == calc$death_cause)), 
+               " for three year periods for counties (left) and state and nation (right)."
+        ), icon("info-circle")
+      ),
+      HTML("<h5>Data Source: CDC WONDER<br>Analysis: The Rensselaer Institute for Data Exploration and Applications 
+             (<a href='http://idea.rpi.edu' target=_Blank>The Rensselaer IDEA</a>)</h5>")
+    )
+  })
 }
 
 
