@@ -727,6 +727,7 @@ serv_calc <- list()
 # a picker to change, then it updates each other page's picker
 serv_calc[[1]] <- function(calc, session) {
   if(!exists("calc$state_choice")) {
+    calc$lock <- FALSE
     calc$state_choice <- "OH"
     # updatePickerInput(session,"p1_state_choice", select = calc$state_choice) # the updating observe below
     # updatePickerInput(session,"p2_state_choice", select = calc$state_choice) # counts on each state_choice to
@@ -740,30 +741,49 @@ serv_calc[[1]] <- function(calc, session) {
 }  
 
 serv_calc[[2]] <- function(calc, session) {
+  calc$lock.key <- reactive({
+    calc$lock <- FALSE
+  })
+  
   observe({
-    calc$state_choice <- calc$p1_state_choice
+    #if (isolate(!calc$lock)) {
+      calc$state_choice <- calc$p1_state_choice
+    #}
   })
   observe({
-    calc$state_choice <- calc$p2_state_choice
+    #if (isolate(!calc$lock)) {
+      calc$state_choice <- calc$p2_state_choice
+    #}
   })
   observe({
-    calc$state_choice <- calc$p3_state_choice
+    #if (isolate(!calc$lock)) {
+      calc$state_choice <- calc$p3_state_choice
+    #}
   })
   observe({
-    calc$state_choice <- calc$p4_state_choice
+    #if (isolate(!calc$lock)) {
+      calc$state_choice <- calc$p4_state_choice
+    #}
   })
 
-  calc$update_stuff <- reactiveTimer(2000)
+  #calc$update_stuff <- reactiveTimer(2000)
   
   observe({
-    calc$update_stuff()
-    #calc$state_choice
+    #calc$update_stuff()
+    calc$state_choice
+    
+    if(!isolate(calc$lock)) {
+      isolate(calc$lock <- TRUE)
+      updatePickerInput(session,"p1_state_choice", select = calc$state_choice)
+      updatePickerInput(session,"p2_state_choice", select = calc$state_choice)
+      updatePickerInput(session,"p3_state_choice", select = calc$state_choice)
+      updatePickerInput(session,"p4_state_choice", select = calc$state_choice)
+      calc$lock.key()
+    }
   
-    updatePickerInput(session,"p1_state_choice", select = isolate(calc$state_choice))
-    updatePickerInput(session,"p2_state_choice", select = isolate(calc$state_choice))
-    updatePickerInput(session,"p3_state_choice", select = isolate(calc$state_choice))
-    updatePickerInput(session,"p4_state_choice", select = isolate(calc$state_choice))
   })
+  
+  
 }
 
 serv_calc[[3]] <- function(calc, session) {
@@ -1406,10 +1426,16 @@ serv_out[["determinant_text"]] <- function(calc, session) {
         SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Reason"
       )
     }
-    
+    lock_text <- ""
+    if(calc$lock) {
+      lock_text <- "true"
+    }
+    else {
+      lock_text <- "false"
+    }
     tagList(
       tags$h3(
-        paste0("DEFINITION: ", as.character(
+        paste0("DEFINITION: ", lock_text, as.character(
           SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Definitions")
         )),
       tags$h5(paste0("EXPLANATION: ",reason_text))
