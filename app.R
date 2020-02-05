@@ -528,7 +528,7 @@ ui_list[["Page4"]] <- fluidPage(
       ),
       fluidRow(
         class = "page page4",
-        column(4, tags$h4("ABOUT MORTALITYMINDER",align="center"),
+        column(4, tags$h4(uiOutput("aboutMM"),align="center"),
                fluidRow(
                  column(11, 
                         HTML("<h5>The goal of MortalityMinder (MM)  is to enable healthcare researchers, providers, 
@@ -727,12 +727,12 @@ serv_calc <- list()
 # a picker to change, then it updates each other page's picker
 serv_calc[[1]] <- function(calc, session) {
   if(!exists("calc$state_choice")) {
-    calc$lock <- FALSE
+    isolate(calc$lock <- TRUE)
     calc$state_choice <- "OH"
-    # updatePickerInput(session,"p1_state_choice", select = calc$state_choice) # the updating observe below
-    # updatePickerInput(session,"p2_state_choice", select = calc$state_choice) # counts on each state_choice to
-    # updatePickerInput(session,"p3_state_choice", select = calc$state_choice) # not be null, so this is updates
-    # updatePickerInput(session,"p4_state_choice", select = calc$state_choice) # them all and gives them a value out the gate
+    updatePickerInput(session,"p1_state_choice", select = "OH") # the updating observe below
+    updatePickerInput(session,"p2_state_choice", select = "OH") # counts on each state_choice to
+    updatePickerInput(session,"p3_state_choice", select = "OH") # not be null, so this is updates
+    updatePickerInput(session,"p4_state_choice", select = "OH") # them all and gives them a value out the gate
     
   }
   if(!exists("calc$death_cause")) {
@@ -741,48 +741,97 @@ serv_calc[[1]] <- function(calc, session) {
 }  
 
 serv_calc[[2]] <- function(calc, session) {
-  calc$lock.key <- reactive({
-    calc$lock <- FALSE
-  })
+  # calc$lock.key <- reactive({
+  #   calc$lock <- FALSE
+  # })
   
-  observe({
-    #if (isolate(!calc$lock)) {
-      calc$state_choice <- calc$p1_state_choice
-    #}
-  })
-  observe({
-    #if (isolate(!calc$lock)) {
-      calc$state_choice <- calc$p2_state_choice
-    #}
-  })
-  observe({
-    #if (isolate(!calc$lock)) {
-      calc$state_choice <- calc$p3_state_choice
-    #}
-  })
-  observe({
-    #if (isolate(!calc$lock)) {
-      calc$state_choice <- calc$p4_state_choice
-    #}
-  })
-
-  #calc$update_stuff <- reactiveTimer(2000)
-  
-  observe({
-    #calc$update_stuff()
-    calc$state_choice
+  calc$update.pickers <- reactive({
     
-    if(!isolate(calc$lock)) {
-      isolate(calc$lock <- TRUE)
+    if (isolate(calc$lock)) {
+    # isolate(calc$lock <- TRUE)
       updatePickerInput(session,"p1_state_choice", select = calc$state_choice)
       updatePickerInput(session,"p2_state_choice", select = calc$state_choice)
       updatePickerInput(session,"p3_state_choice", select = calc$state_choice)
       updatePickerInput(session,"p4_state_choice", select = calc$state_choice)
-      calc$lock.key()
     }
+  })
+    
+  calc$time <- reactiveTimer(1000)
   
+  observe({
+    req(calc$state_choice)
+
+    calc$time()
+
+    calc$isitgood <- TRUE
+    
+    if(isolate(calc$lock)) {
+      if (exists("calc$p1_state_choice")) {
+        if (calc$state_choice != calc$p1_state_choice) {
+          updatePickerInput(session,"p1_state_choice", select = calc$state_choice)
+          calc$isitgood <- FALSE
+        }
+      }
+      if (exists("calc$p2_state_choice")) {
+        if (calc$state_choice != calc$p2_state_choice) {
+          updatePickerInput(session,"p2_state_choice", select = calc$state_choice)
+          calc$isitgood <- FALSE
+        }
+      }
+      if (exists("calc$p3_state_choice")) {
+        if (calc$state_choice != calc$p3_state_choice) {
+          updatePickerInput(session,"p3_state_choice", select = calc$state_choice)
+          calc$isitgood <- FALSE
+        }
+      }
+      if (exists("calc$p4_state_choice")) {
+        if (calc$state_choice != calc$p4_state_choice) {
+          updatePickerInput(session,"p4_state_choice", select = calc$state_choice)
+          calc$isitgood <- FALSE
+        }
+      }
+      if (calc$isitgood) {
+        calc$lock <- FALSE
+      }
+      else {
+        calc$update.pickers()
+      }
+    }
   })
   
+  observeEvent(calc$p1_state_choice, {
+    if (isolate(!calc$lock)) {
+      isolate(calc$lock <- TRUE)
+      calc$state_choice <- calc$p1_state_choice
+      calc$update.pickers()
+    }
+  })
+  observeEvent(calc$p2_state_choice, {
+    if (isolate(!calc$lock)) {
+      isolate(calc$lock <- TRUE)
+      calc$state_choice <- calc$p2_state_choice
+      # isolate(calc$lock <- TRUE)
+      calc$update.pickers()
+    }
+  })
+  observeEvent(calc$p3_state_choice, {
+    if (isolate(!calc$lock)) {
+      isolate(calc$lock <- TRUE)
+      calc$state_choice <- calc$p3_state_choice
+      # isolate(calc$lock <- TRUE)
+      calc$update.pickers()
+    }
+  })
+  observeEvent(calc$p4_state_choice, {
+    if (isolate(!calc$lock)) {
+      isolate(calc$lock <- TRUE)
+      calc$state_choice <- calc$p4_state_choice
+      # isolate(calc$lock <- TRUE)
+      calc$update.pickers()
+    }
+  })
+
+
   
 }
 
@@ -1203,6 +1252,12 @@ serv_calc[[22]] <- function(calc, session) {
 
 serv_out <- list()
 
+serv_out[["aboutMM"]] <- function(calc, session) {
+  renderText({
+    paste("About Mortality Minder <sc>", calc$state_choice, "<'sc>", calc$p1_state_choice, calc$p2_state_choice, calc$p3_state_choice, calc$p4_state_choice)
+  })
+}
+
 serv_out[["p1_death_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
@@ -1426,16 +1481,18 @@ serv_out[["determinant_text"]] <- function(calc, session) {
         SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Reason"
       )
     }
-    lock_text <- ""
-    if(calc$lock) {
-      lock_text <- "true"
+    calc$lock_str <- ""
+    calc$state_str <- paste("<sc>", calc$state_choice, "</sc>", calc$p1_state_choice, calc$p2_state_choice, calc$p3_state_choice, calc$p4_state_choice)
+    if (calc$lock) {
+      calc$lock_str <- "locked"
+      
     }
     else {
-      lock_text <- "false"
+      calc$lock_str <- "unlocked"
     }
     tagList(
       tags$h3(
-        paste0("DEFINITION: ", lock_text, as.character(
+        paste0("DEFINITION: ", calc$lock_str, calc$state_str, as.character(
           SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Definitions")
         )),
       tags$h5(paste0("EXPLANATION: ",reason_text))
