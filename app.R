@@ -722,120 +722,251 @@ highlight_county <- function(event){
 
 serv_calc <- list()
 
+
 # This calc is for synchronizing the state nav bar selection across pages as
 # well as create a universal state_choice value. Each observeEvent checks for
 # a picker to change, then it updates each other page's picker
 serv_calc[[1]] <- function(calc, session) {
   if(!exists("calc$state_choice")) {
-    isolate(calc$lock <- TRUE)
+    calc$init <- FALSE
+    isolate(calc$lock <- FALSE)
     calc$state_choice <- "OH"
-    updatePickerInput(session,"p1_state_choice", select = "OH") # the updating observe below
-    updatePickerInput(session,"p2_state_choice", select = "OH") # counts on each state_choice to
-    updatePickerInput(session,"p3_state_choice", select = "OH") # not be null, so this is updates
-    updatePickerInput(session,"p4_state_choice", select = "OH") # them all and gives them a value out the gate
+    calc$p1_state_choice <- reactiveVal({"OH"})
+    calc$p2_state_choice <- reactiveVal({"OH"})
+    calc$p3_state_choice <- reactiveVal({"OH"})
+    calc$p4_state_choice <- reactiveVal({"OH"})
+    # calc$p1_state_choice("OH")
+    # calc$p2_state_choice("OH")
+    # calc$p3_state_choice("OH")
+    # calc$p4_state_choice("OH")
+
     
   }
   if(!exists("calc$death_cause")) {
     calc$death_cause <- "Despair"
   }
-}  
+}
 
 serv_calc[[2]] <- function(calc, session) {
-  # calc$lock.key <- reactive({
-  #   calc$lock <- FALSE
-  # })
   
-  calc$update.pickers <- reactive({
-    
-    if (isolate(calc$lock)) {
-    # isolate(calc$lock <- TRUE)
-      updatePickerInput(session,"p1_state_choice", select = calc$state_choice)
-      updatePickerInput(session,"p2_state_choice", select = calc$state_choice)
-      updatePickerInput(session,"p3_state_choice", select = calc$state_choice)
-      updatePickerInput(session,"p4_state_choice", select = calc$state_choice)
-    }
-  })
-    
-  calc$time <- reactiveTimer(1000)
+  calc$rv_p1_choice <- reactive({})
+  calc$rv_p2_choice <- reactive({})
+  calc$rv_p3_choice <- reactive({})
+  calc$rv_p4_choice <- reactive({})
   
-  observe({
-    req(calc$state_choice)
-
-    calc$time()
-
-    calc$isitgood <- TRUE
-    
-    if(isolate(calc$lock)) {
-      if (exists("calc$p1_state_choice")) {
-        if (calc$state_choice != calc$p1_state_choice) {
-          updatePickerInput(session,"p1_state_choice", select = calc$state_choice)
-          calc$isitgood <- FALSE
-        }
-      }
-      if (exists("calc$p2_state_choice")) {
-        if (calc$state_choice != calc$p2_state_choice) {
-          updatePickerInput(session,"p2_state_choice", select = calc$state_choice)
-          calc$isitgood <- FALSE
-        }
-      }
-      if (exists("calc$p3_state_choice")) {
-        if (calc$state_choice != calc$p3_state_choice) {
-          updatePickerInput(session,"p3_state_choice", select = calc$state_choice)
-          calc$isitgood <- FALSE
-        }
-      }
-      if (exists("calc$p4_state_choice")) {
-        if (calc$state_choice != calc$p4_state_choice) {
-          updatePickerInput(session,"p4_state_choice", select = calc$state_choice)
-          calc$isitgood <- FALSE
-        }
-      }
-      if (calc$isitgood) {
-        calc$lock <- FALSE
-      }
-      else {
-        calc$update.pickers()
-      }
-    }
-  })
-  
-  observeEvent(calc$p1_state_choice, {
-    if (isolate(!calc$lock)) {
-      isolate(calc$lock <- TRUE)
-      calc$state_choice <- calc$p1_state_choice
-      calc$update.pickers()
-    }
-  })
-  observeEvent(calc$p2_state_choice, {
-    if (isolate(!calc$lock)) {
-      isolate(calc$lock <- TRUE)
-      calc$state_choice <- calc$p2_state_choice
+  observeEvent(calc$p1_state_dropdown, {
+    if(isolate(!calc$lock)) {
       # isolate(calc$lock <- TRUE)
-      calc$update.pickers()
-    }
+      calc$rv_p1_choice <- calc$p1_state_dropdown
+      calc$p1_state_choice(calc$rv_p1_choice)
+      }
   })
-  observeEvent(calc$p3_state_choice, {
-    if (isolate(!calc$lock)) {
-      isolate(calc$lock <- TRUE)
-      calc$state_choice <- calc$p3_state_choice
+  observeEvent(calc$p2_state_dropdown, {
+    if(isolate(!calc$lock)) {
       # isolate(calc$lock <- TRUE)
-      calc$update.pickers()
+      calc$rv_p2_choice <- calc$p2_state_dropdown
+      calc$p2_state_choice(calc$rv_p2_choice)
     }
   })
-  observeEvent(calc$p4_state_choice, {
-    if (isolate(!calc$lock)) {
-      isolate(calc$lock <- TRUE)
-      calc$state_choice <- calc$p4_state_choice
+  observeEvent(calc$p3_state_dropdown, {
+    if(isolate(!calc$lock)) {
       # isolate(calc$lock <- TRUE)
-      calc$update.pickers()
+      calc$rv_p3_choice <- calc$p3_state_dropdown
+      calc$p3_state_choice(calc$rv_p3_choice)
     }
   })
-
-
+  observeEvent(calc$p4_state_dropdown, {
+    if(isolate(!calc$lock)) {
+      # isolate(calc$lock <- TRUE)
+      calc$rv_p4_choice <- calc$p4_state_dropdown
+      calc$p4_state_choice(calc$rv_p4_choice)
+    }
+  })
   
 }
 
+
+
+#   observeEvent(calc$p1_state_choice, {
+#     if (isolate(!calc$lock)) {
+#       isolate(calc$lock <- TRUE)
+#       calc$state_choice <- calc$p1_state_choice
+#       # calc$update.pickers()
+#     }
+#   })
+
 serv_calc[[3]] <- function(calc, session) {
+  calc$unlock <- reactive({
+    # calc$lock <- FALSE
+  })
+  
+  observeEvent(calc$p1_state_choice(), {
+    if(isolate(!calc$lock)) {
+      calc$state_choice <- calc$p1_state_choice()
+    }
+  })
+  observeEvent(calc$p2_state_choice(), {
+    if(isolate(!calc$lock)) {
+      calc$state_choice <- calc$p2_state_choice()
+    }
+  })
+  observeEvent(calc$p3_state_choice(), {
+    if(isolate(!calc$lock)) {
+      calc$state_choice <- calc$p3_state_choice()
+    }
+  })
+  observeEvent(calc$p4_state_choice(), {
+    if(isolate(!calc$lock)) {
+      calc$state_choice <- calc$p4_state_choice()
+    }
+  })
+
+  observe({
+    # req(calc$p1_state_choice())
+    # req(calc$p2_state_choice())
+    # req(calc$p3_state_choice())
+    # req(calc$p4_state_choice())
+    # req(calc$state_choice)
+    
+    invalidateLater(1000)
+
+    if(isolate(!calc$lock)) {
+      updatePickerInput(session, "p1_state_dropdown", calc$state_choice)
+      updatePickerInput(session, "p2_state_dropdown", calc$state_choice)
+      updatePickerInput(session, "p3_state_dropdown", calc$state_choice)
+      updatePickerInput(session, "p4_state_dropdown", calc$state_choice)
+    }
+    else {
+      if((calc$p1_state_choice() == calc$state_choice) & (calc$p2_state_choice() == calc$state_choice) & (calc$p3_state_choice() == calc$state_choice) & (calc$p4_state_choice() == calc$state_choice)) {
+        calc$unlock()
+      }
+    }
+  })
+  
+  observeEvent(calc$state_choice, {
+    # if(isolate(calc$lock)) {
+      calc$p1_state_choice(calc$state_choice)
+      calc$p2_state_choice(calc$state_choice)
+      calc$p3_state_choice(calc$state_choice)
+      calc$p4_state_choice(calc$state_choice)
+    # }
+  })
+  
+}
+
+
+# serv_calc[[2]] <- function(calc, session) {
+#   calc$lock.key <- reactive({
+#     calc$lock <- FALSE
+#   })
+#   
+#   
+#   
+#   # calc$update.pickers <- 
+#   observe({
+#     calc$state_choice
+#     
+#     
+#     # invalidateLater(1000)
+#     
+#     if (isolate(calc$lock)) {
+#     # isolate(calc$lock <- TRUE)
+#       updatePickerInput(session,"p1_state_dropdown", select = calc$state_choice)
+#       updatePickerInput(session,"p2_state_dropdown", select = calc$state_choice)
+#       updatePickerInput(session,"p3_state_dropdown", select = calc$state_choice)
+#       updatePickerInput(session,"p4_state_dropdown", select = calc$state_choice)
+#       # if((calc$p1_state_choice == calc$state_choice) && (calc$p2_state_choice == calc$state_choice) && (calc$p3_state_choice == calc$state_choice) && (calc$p4_state_choice == calc$state_choice)) {
+#       #   calc$lock.key()
+#       # }
+#     }
+#   })
+#     
+#   calc$time <- reactiveTimer(1000)
+#   
+#   observe({
+#     req(calc$state_choice)
+# 
+#     # calc$time()
+# 
+#     invalidateLater(1000, session)
+# 
+#     calc$p1_good <- TRUE
+#     calc$p2_good <- TRUE
+#     calc$p3_good <- TRUE
+#     calc$p4_good <- TRUE
+# 
+# 
+#     # if(isolate(calc$lock)) {
+#       if (exists("calc$p1_state_choice")) {
+#         if (calc$state_choice != calc$p1_state_choice) {
+#           # updatePickerInput(session,"p1_state_choice", select = calc$state_choice)
+#           calc$p1_good <- FALSE
+#         }
+#       }
+#       if (exists("calc$p2_state_choice")) {
+#         if (calc$state_choice != calc$p2_state_choice) {
+#           # updatePickerInput(session,"p2_state_choice", select = calc$state_choice)
+#           calc$p2_good <- FALSE
+#         }
+#       }
+#       if (exists("calc$p3_state_choice")) {
+#         if (calc$state_choice != calc$p3_state_choice) {
+#           # updatePickerInput(session,"p3_state_choice", select = calc$state_choice)
+#           calc$p3_good <- FALSE
+#         }
+#       }
+#       if (exists("calc$p4_state_choice")) {
+#         if (calc$state_choice != calc$p4_state_choice) {
+#           # updatePickerInput(session,"p4_state_choice", select = calc$state_choice)
+#           calc$p4_good <- FALSE
+#         }
+#       }
+#       if (calc$p1_good & calc$p2_good & calc$p3_good & calc$p4_good) {
+#         calc$lock <- FALSE
+#       }
+#       # else {
+#       #   calc$update.pickers()
+#       # }
+#     # }
+#   })
+#   
+#   observeEvent(calc$p1_state_choice, {
+#     if (isolate(!calc$lock)) {
+#       isolate(calc$lock <- TRUE)
+#       calc$state_choice <- calc$p1_state_choice
+#       # calc$update.pickers()
+#     }
+#   })
+#   observeEvent(calc$p2_state_choice, {
+#     if (isolate(!calc$lock)) {
+#       isolate(calc$lock <- TRUE)
+#       calc$state_choice <- calc$p2_state_choice
+#       # isolate(calc$lock <- TRUE)
+#       # calc$update.pickers()
+#     }
+#   })
+#   observeEvent(calc$p3_state_choice, {
+#     if (isolate(!calc$lock)) {
+#       isolate(calc$lock <- TRUE)
+#       calc$state_choice <- calc$p3_state_choice
+#       # isolate(calc$lock <- TRUE)
+#       # calc$update.pickers()
+#     }
+#   })
+#   observeEvent(calc$p4_state_choice, {
+#     if (isolate(!calc$lock)) {
+#       isolate(calc$lock <- TRUE)
+#       calc$state_choice <- calc$p4_state_choice
+#       # isolate(calc$lock <- TRUE)
+#       # calc$update.pickers()
+#     }
+#   })
+# 
+# 
+#   
+# }
+
+serv_calc[[4]] <- function(calc, session) {
   observeEvent(calc$p1_death_cause, {
     calc$death_cause <- calc$p1_death_cause
     
@@ -864,7 +995,7 @@ serv_calc[[3]] <- function(calc, session) {
 }
 
 #Extracting the national mean
-serv_calc[[4]] <- function(calc, session) {
+serv_calc[[5]] <- function(calc, session) {
   calc$determinant.url <- reactive({
     return(as.character(
       SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"URL"))
@@ -872,7 +1003,7 @@ serv_calc[[4]] <- function(calc, session) {
 }
 
 
-serv_calc[[5]] <- function(calc, session) {
+serv_calc[[6]] <- function(calc, session) {
   calc$determinant.source <- reactive({
     return(as.character(
       SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Source"))
@@ -884,10 +1015,10 @@ serv_calc[[5]] <- function(calc, session) {
   })
 }
 
-serv_calc[[6]] <- function(calc, session) {
+serv_calc[[7]] <- function(calc, session) {
   calc$county_choice <- reactiveVal()
 }
-serv_calc[[7]] <- function(calc, session) {
+serv_calc[[8]] <- function(calc, session) {
   calc$mort.rate <- reactive({
     calc$county_choice(NULL)
     assign("county_polygon", NULL, envir = .GlobalEnv)
@@ -921,7 +1052,7 @@ serv_calc[[7]] <- function(calc, session) {
 
 
 # get unfiltered kendal cors
-serv_calc[[8]] <- function(calc, session) {
+serv_calc[[9]] <- function(calc, session) {
   calc$kendall.cor <- reactive({
     
     calc$kendall.cor.new <- calc$mort.rate() %>%
@@ -940,7 +1071,7 @@ serv_calc[[8]] <- function(calc, session) {
 }
 
 # #Extracting the national mean
-serv_calc[[9]] <- function(calc, session) {
+serv_calc[[10]] <- function(calc, session) {
   calc$national.mean <- reactive({
     switch(calc$death_cause,
            "Despair" = {
@@ -968,7 +1099,7 @@ serv_calc[[9]] <- function(calc, session) {
   })
 }
 
-serv_calc[[10]] <- function(calc, session) {
+serv_calc[[11]] <- function(calc, session) {
   calc$mort.rate.original <- reactive({
     calc$county_choice(NULL)
     assign("county_polygon", NULL, envir = .GlobalEnv)
@@ -1001,7 +1132,7 @@ serv_calc[[10]] <- function(calc, session) {
 }
 
 # Cache of UNORDERED mortality trend cluster label calculation
-serv_calc[[11]] <- function(calc, session) {
+serv_calc[[12]] <- function(calc, session) {
   calc$mort.cluster.raw <- reactive({
     
     # Variables:
@@ -1033,7 +1164,7 @@ serv_calc[[11]] <- function(calc, session) {
 }
 
 # Cache of Weighed Avg by UNORDERED cluster
-serv_calc[[12]] <- function(calc, session) {
+serv_calc[[13]] <- function(calc, session) {
   calc$mort.avg.cluster.raw <- reactive({
     
     # Variables:
@@ -1055,7 +1186,7 @@ serv_calc[[12]] <- function(calc, session) {
 }
 
 # Cache of MAPPING from UNORDERED mortality trend label to ORDERED mortality trend label
-serv_calc[[13]] <- function(calc, session) {
+serv_calc[[14]] <- function(calc, session) {
   calc$mort.cluster.map <- reactive({
     
     # Variables:
@@ -1080,7 +1211,7 @@ serv_calc[[13]] <- function(calc, session) {
 }
 
 # Cache of Weighed Avg by ORDERED cluster
-serv_calc[[14]] <- function(calc, session) {
+serv_calc[[15]] <- function(calc, session) {
   calc$mort.avg.cluster.ord <- reactive({
     
     # Variables:
@@ -1096,7 +1227,7 @@ serv_calc[[14]] <- function(calc, session) {
   })
 }
 
-serv_calc[[15]] <-function(calc, session) {
+serv_calc[[16]] <-function(calc, session) {
   calc$rv_county_drop_choice <- reactive({})
   
   calc$county_event <- observeEvent(calc$county_drop_choice, {
@@ -1110,7 +1241,7 @@ serv_calc[[15]] <-function(calc, session) {
 
 #  
 #   # click on geo cluster map shows county data on mort_line
-serv_calc[[16]] <- function(calc, session) {
+serv_calc[[17]] <- function(calc, session) {
   observe({
     event <- calc$geo_cluster_kmean_shape_click
     if (is.null(event))
@@ -1122,7 +1253,7 @@ serv_calc[[16]] <- function(calc, session) {
 }
 
 
-serv_calc[[17]] <- function(calc, session) {
+serv_calc[[18]] <- function(calc, session) {
   observe({
     event <- calc$geo_mort_change2_shape_click
     if (is.null(event))
@@ -1134,7 +1265,7 @@ serv_calc[[17]] <- function(calc, session) {
 }
 
 
-serv_calc[[18]] <- function(calc, session) {
+serv_calc[[19]] <- function(calc, session) {
   observe({
     event <- calc$determinants_plot5_shape_click
     if (is.null(event))
@@ -1146,7 +1277,7 @@ serv_calc[[18]] <- function(calc, session) {
 }
 
 
-serv_calc[[19]] <- function(calc, session) {
+serv_calc[[20]] <- function(calc, session) {
   observe({
     county_name <- sub(calc$county_choice(), pattern = " [[:alpha:]]*$", replacement = "")
     req(county_name)
@@ -1175,7 +1306,7 @@ serv_calc[[19]] <- function(calc, session) {
 }
 
 
-serv_calc[[20]] <- function(calc, session) {
+serv_calc[[21]] <- function(calc, session) {
   observe({
     event <- calc$determinants_plot3_click
     req(event)
@@ -1215,7 +1346,7 @@ serv_calc[[20]] <- function(calc, session) {
 
 
 # click on bar plot triggers page change
-serv_calc[[21]] <- function(calc, session) {
+serv_calc[[22]] <- function(calc, session) {
   observe({
     req(calc$page2_bar_plot_click) # Same as if-not-NULL
     click <- calc$page2_bar_plot_click
@@ -1229,7 +1360,7 @@ serv_calc[[21]] <- function(calc, session) {
 }
 
   # click on bar plot triggers page change
-serv_calc[[22]] <- function(calc, session) {
+serv_calc[[23]] <- function(calc, session) {
   observe({
     req(calc$page1_bar_plot_click) # Same as if-not-NULL
     click <- calc$page1_bar_plot_click
@@ -1254,7 +1385,7 @@ serv_out <- list()
 
 serv_out[["aboutMM"]] <- function(calc, session) {
   renderText({
-    paste("About Mortality Minder <sc>", calc$state_choice, "<'sc>", calc$p1_state_choice, calc$p2_state_choice, calc$p3_state_choice, calc$p4_state_choice)
+    paste("About Mortality Minder", calc$lock, "<sc>", calc$state_choice, "<'sc>", calc$p1_state_choice, calc$p2_state_choice, calc$p3_state_choice, calc$p4_state_choice)
   })
 }
 
@@ -1329,7 +1460,7 @@ serv_out[["p4_death_selector"]] <- function(calc, session) {
 serv_out[["p1_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
-      inputId = "p1_state_choice",
+      inputId = "p1_state_dropdown",
       label = h4("State"), 
       choices = state.list,
       selected = NULL,
@@ -1346,7 +1477,7 @@ serv_out[["p1_state_selector"]] <- function(calc, session) {
 serv_out[["p2_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
-      inputId = "p2_state_choice",
+      inputId = "p2_state_dropdown",
       label = h4("State"), 
       choices = state.list,
       selected = NULL,
@@ -1363,7 +1494,7 @@ serv_out[["p2_state_selector"]] <- function(calc, session) {
 serv_out[["p3_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
-      inputId = "p3_state_choice",
+      inputId = "p3_state_dropdown",
       label = h4("State"), 
       choices = state.list,
       selected = NULL,
@@ -1380,7 +1511,7 @@ serv_out[["p3_state_selector"]] <- function(calc, session) {
 serv_out[["p4_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
-      inputId = "p4_state_choice",
+      inputId = "p4_state_dropdown",
       label = h4("State"), 
       choices = state.list,
       selected = NULL,
@@ -1482,7 +1613,7 @@ serv_out[["determinant_text"]] <- function(calc, session) {
       )
     }
     calc$lock_str <- ""
-    calc$state_str <- paste("<sc>", calc$state_choice, "</sc>", calc$p1_state_choice, calc$p2_state_choice, calc$p3_state_choice, calc$p4_state_choice)
+    calc$state_str <- paste("<sc>", calc$state_choice, "</sc>", calc$p1_state_choice(), calc$p2_state_choice(), calc$p3_state_choice(), calc$p4_state_choice())
     if (calc$lock) {
       calc$lock_str <- "locked"
       
