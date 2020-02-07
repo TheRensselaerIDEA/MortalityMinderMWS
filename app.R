@@ -796,27 +796,35 @@ serv_calc[[2]] <- function(calc, session) {
 #   })
 
 serv_calc[[3]] <- function(calc, session) {
-  calc$unlock <- reactive({
-    # calc$lock <- FALSE
+  observe({
+    invalidateLater(1000, session)
+    
+    if((calc$p1_state_choice() == calc$state_choice) & (calc$p2_state_choice() == calc$state_choice) & (calc$p3_state_choice() == calc$state_choice) & (calc$p4_state_choice() == calc$state_choice)) {
+      calc$lock <- FALSE
+    }
   })
   
   observeEvent(calc$p1_state_choice(), {
     if(isolate(!calc$lock)) {
+      isolate(calc$lock <- TRUE)
       calc$state_choice <- calc$p1_state_choice()
     }
   })
   observeEvent(calc$p2_state_choice(), {
     if(isolate(!calc$lock)) {
+      isolate(calc$lock <- TRUE)
       calc$state_choice <- calc$p2_state_choice()
     }
   })
   observeEvent(calc$p3_state_choice(), {
     if(isolate(!calc$lock)) {
+      isolate(calc$lock <- TRUE)
       calc$state_choice <- calc$p3_state_choice()
     }
   })
   observeEvent(calc$p4_state_choice(), {
     if(isolate(!calc$lock)) {
+      isolate(calc$lock <- TRUE)
       calc$state_choice <- calc$p4_state_choice()
     }
   })
@@ -828,19 +836,19 @@ serv_calc[[3]] <- function(calc, session) {
     # req(calc$p4_state_choice())
     # req(calc$state_choice)
     
-    invalidateLater(1000)
+    invalidateLater(1000, session)
 
-    if(isolate(!calc$lock)) {
-      updatePickerInput(session, "p1_state_dropdown", calc$state_choice)
-      updatePickerInput(session, "p2_state_dropdown", calc$state_choice)
-      updatePickerInput(session, "p3_state_dropdown", calc$state_choice)
-      updatePickerInput(session, "p4_state_dropdown", calc$state_choice)
-    }
-    else {
-      if((calc$p1_state_choice() == calc$state_choice) & (calc$p2_state_choice() == calc$state_choice) & (calc$p3_state_choice() == calc$state_choice) & (calc$p4_state_choice() == calc$state_choice)) {
-        calc$unlock()
-      }
-    }
+    # if(isolate(!calc$lock)) {
+    updatePickerInput(session, "p1_state_dropdown", selected = calc$state_choice)
+    updatePickerInput(session, "p2_state_dropdown", selected = calc$state_choice)
+    updatePickerInput(session, "p3_state_dropdown", selected = calc$state_choice)
+    updatePickerInput(session, "p4_state_dropdown", selected = calc$state_choice)
+    # }
+    # else {
+    #   if((calc$p1_state_choice() == calc$state_choice) & (calc$p2_state_choice() == calc$state_choice) & (calc$p3_state_choice() == calc$state_choice) & (calc$p4_state_choice() == calc$state_choice)) {
+    #     calc$lock <- TRUE
+    #   }
+    # }
   })
   
   observeEvent(calc$state_choice, {
