@@ -69,7 +69,8 @@ ui_list[["Page1"]] <- fluidPage(
       tags$h3(id = "input_text2", "State:"),
       uiOutput("p1_state_selector"),
       tags$h3(id = "input_text1", "Cause of Death:"),
-      uiOutput("p1_death_selector")
+      uiOutput("p1_death_selector"),
+      uiOutput("p1_updater")
       
     )
   ),
@@ -237,6 +238,7 @@ ui_list[["Page2"]] <- fluidPage(
       uiOutput("p2_state_selector"),
       tags$h3(id = "input_text1", "Cause of Death:"),
       uiOutput("p2_death_selector"),
+      uiOutput("p2_updater"),
       tags$script(src = "jquery-ui.min.js"),
       tags$script(src = "fullpage.js"),
       tags$script(src = "jquery.ba-outside-events.js"),
@@ -366,6 +368,7 @@ ui_list[["Page3"]] <- fluidPage(
       uiOutput("p3_state_selector"),
       tags$h3(id = "input_text1", "Cause of Death:"),
       uiOutput("p3_death_selector"),
+      uiOutput("p3_updater"),
       tags$script(src = "jquery-ui.min.js"),
       tags$script(src = "fullpage.js"),
       tags$script(src = "jquery.ba-outside-events.js"),
@@ -513,6 +516,7 @@ ui_list[["Page4"]] <- fluidPage(
       uiOutput("p4_state_selector"),
       tags$h3(id = "input_text1", "Cause of Death:"),
       uiOutput("p4_death_selector"),
+      uiOutput("p4_updater"),
       tags$script(src = "jquery-ui.min.js"),
       tags$script(src = "fullpage.js"),
       tags$script(src = "jquery.ba-outside-events.js"),
@@ -528,7 +532,7 @@ ui_list[["Page4"]] <- fluidPage(
       ),
       fluidRow(
         class = "page page4",
-        column(4, tags$h4(uiOutput("aboutMM"),align="center"),
+        column(4, tags$h4("ABOUT MORTALITYMINDER",align="center"),
                fluidRow(
                  column(11, 
                         HTML("<h5>The goal of MortalityMinder (MM)  is to enable healthcare researchers, providers, 
@@ -722,259 +726,132 @@ highlight_county <- function(event){
 
 serv_calc <- list()
 
-
 # This calc is for synchronizing the state nav bar selection across pages as
 # well as create a universal state_choice value. Each observeEvent checks for
 # a picker to change, then it updates each other page's picker
+# serv_calc[[1]] <- function(calc, session) {
+#   if(!exists("calc$state_choice")) {
+#     calc$lock <- FALSE
+#     calc$p1_state_rv <- reactiveVal({})
+#     calc$p2_state_rv <- reactiveVal({})
+#     calc$p3_state_rv <- reactiveVal({})
+#     calc$p4_state_rv <- reactiveVal({})
+#     calc$state_choice <- "OH"
+#   }
+#   if(!exists("calc$death_cause")) {
+#     calc$death_cause <- "Despair"
+#   }
+# }  
+# 
+# serv_calc[[2]] <- function(calc, session) {
+#   
+#   # lock stops an issue where changing between states on two different
+#   # pages rapidly causes the state to enter an endless loop of switching
+#   # between the state on the page. lock only allows one state change per
+#   # two seconds. This stops spamming choices
+#   observe({
+#     invalidateLater(2000)
+#     updatePickerInput(session, "")
+#     calc$lock <- FALSE
+#   })
+#   
+# 
+#   
+#   observeEvent(calc$p1_state_choice, {
+#     if(isolate(!calc$lock)) {
+#       calc$lock <- TRUE
+#       calc$state_choice <- calc$p1_state_choice
+#     }
+#   })
+#   observeEvent(calc$p2_state_choice, {
+#     if(isolate(!calc$lock)) {
+#       calc$lock <- TRUE
+#       calc$state_choice <- calc$p2_state_choice
+#     }
+#   })
+#   observeEvent(calc$p3_state_choice, {
+#     if(isolate(!calc$lock)) {
+#       calc$lock <- TRUE
+#       calc$state_choice <- calc$p3_state_choice
+#     }
+#   })
+#   observeEvent(calc$p4_state_choice, {
+#     if(isolate(!calc$lock)) {
+#       calc$lock <- TRUE
+#       calc$state_choice <- calc$p4_state_choice
+#     }
+#   })
+#   
+#   observeEvent(calc$state_choice,{
+#     calc$p1_state_rv(calc$state_choice)
+#     calc$p2_state_rv(calc$state_choice)
+#     calc$p3_state_rv(calc$state_choice)
+#     calc$p4_state_rv(calc$state_choice)
+#     
+#     updatePickerInput(session, "p1_state_choice", select = calc$state_choice)
+#     updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
+#     updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
+#     updatePickerInput(session, "p4_state_choice", select = calc$state_choice)
+#     
+#   })
+#   
+#   
+#   
+# }
+
 serv_calc[[1]] <- function(calc, session) {
   if(!exists("calc$state_choice")) {
-    calc$init <- FALSE
-    isolate(calc$lock <- FALSE)
     calc$state_choice <- "OH"
-    calc$p1_state_choice <- reactiveVal({"OH"})
-    calc$p2_state_choice <- reactiveVal({"OH"})
-    calc$p3_state_choice <- reactiveVal({"OH"})
-    calc$p4_state_choice <- reactiveVal({"OH"})
-    # calc$p1_state_choice("OH")
-    # calc$p2_state_choice("OH")
-    # calc$p3_state_choice("OH")
-    # calc$p4_state_choice("OH")
-
+    calc$p1_state_hold <- "OH"
+    calc$p2_state_hold <- "OH"
+    calc$p3_state_hold <- "OH"
+    calc$p4_state_hold <- "OH"
+    calc$state_choice <- "OH"
+    # updatePickerInput(session, "p1_state_choice", select = calc$state_choice)
+    # updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
+    # updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
+    # updatePickerInput(session, "p4_state_choice", select = calc$state_choice)
     
   }
   if(!exists("calc$death_cause")) {
     calc$death_cause <- "Despair"
   }
-}
+}  
 
 serv_calc[[2]] <- function(calc, session) {
+  observeEvent(calc$p1_state_choice, {
+    calc$p1_state_hold <- calc$p1_state_choice
+    
+  })
+  observeEvent(calc$p2_state_choice, {
+    calc$p2_state_hold <- calc$p2_state_choice
+  })
+  observeEvent(calc$p3_state_choice, {
+    calc$p3_state_hold <- calc$p3_state_choice
+  })
+  observeEvent(calc$p4_state_choice, {
+    calc$p4_state_hold <- calc$p4_state_choice
+  })
   
-  calc$rv_p1_choice <- reactive({})
-  calc$rv_p2_choice <- reactive({})
-  calc$rv_p3_choice <- reactive({})
-  calc$rv_p4_choice <- reactive({})
+  observeEvent(calc$state_choice {
+    calc$p1_state_hold <- calc$state_choice
+    calc$p2_state_hold <- calc$state_choice
+    calc$p3_state_hold <- calc$state_choice
+    calc$p4_state_hold <- calc$state_choice
+  })
   
-  observeEvent(calc$p1_state_dropdown, {
-    if(isolate(!calc$lock)) {
-      # isolate(calc$lock <- TRUE)
-      calc$rv_p1_choice <- calc$p1_state_dropdown
-      calc$p1_state_choice(calc$rv_p1_choice)
-      }
-  })
-  observeEvent(calc$p2_state_dropdown, {
-    if(isolate(!calc$lock)) {
-      # isolate(calc$lock <- TRUE)
-      calc$rv_p2_choice <- calc$p2_state_dropdown
-      calc$p2_state_choice(calc$rv_p2_choice)
-    }
-  })
-  observeEvent(calc$p3_state_dropdown, {
-    if(isolate(!calc$lock)) {
-      # isolate(calc$lock <- TRUE)
-      calc$rv_p3_choice <- calc$p3_state_dropdown
-      calc$p3_state_choice(calc$rv_p3_choice)
-    }
-  })
-  observeEvent(calc$p4_state_dropdown, {
-    if(isolate(!calc$lock)) {
-      # isolate(calc$lock <- TRUE)
-      calc$rv_p4_choice <- calc$p4_state_dropdown
-      calc$p4_state_choice(calc$rv_p4_choice)
-    }
-  })
+  # observeEvent(invalidateLater(1000),{
+  #   updatePickerInput(session, "p1_state_choice", select = calc$p1_state_hold)
+  #   updatePickerInput(session, "p2_state_choice", select = calc$p2_state_hold)
+  #   updatePickerInput(session, "p3_state_choice", select = calc$p3_state_hold)
+  #   updatePickerInput(session, "p4_state_choice", select = calc$p4_state_hold)
+  # 
+  # })
+  
   
 }
-
-
-
-#   observeEvent(calc$p1_state_choice, {
-#     if (isolate(!calc$lock)) {
-#       isolate(calc$lock <- TRUE)
-#       calc$state_choice <- calc$p1_state_choice
-#       # calc$update.pickers()
-#     }
-#   })
 
 serv_calc[[3]] <- function(calc, session) {
-  observe({
-    invalidateLater(1000, session)
-    
-    if((calc$p1_state_choice() == calc$state_choice) & (calc$p2_state_choice() == calc$state_choice) & (calc$p3_state_choice() == calc$state_choice) & (calc$p4_state_choice() == calc$state_choice)) {
-      calc$lock <- FALSE
-    }
-  })
-  
-  observeEvent(calc$p1_state_choice(), {
-    if(isolate(!calc$lock)) {
-      isolate(calc$lock <- TRUE)
-      calc$state_choice <- calc$p1_state_choice()
-    }
-  })
-  observeEvent(calc$p2_state_choice(), {
-    if(isolate(!calc$lock)) {
-      isolate(calc$lock <- TRUE)
-      calc$state_choice <- calc$p2_state_choice()
-    }
-  })
-  observeEvent(calc$p3_state_choice(), {
-    if(isolate(!calc$lock)) {
-      isolate(calc$lock <- TRUE)
-      calc$state_choice <- calc$p3_state_choice()
-    }
-  })
-  observeEvent(calc$p4_state_choice(), {
-    if(isolate(!calc$lock)) {
-      isolate(calc$lock <- TRUE)
-      calc$state_choice <- calc$p4_state_choice()
-    }
-  })
-
-  observe({
-    # req(calc$p1_state_choice())
-    # req(calc$p2_state_choice())
-    # req(calc$p3_state_choice())
-    # req(calc$p4_state_choice())
-    # req(calc$state_choice)
-    
-    invalidateLater(1000, session)
-
-    # if(isolate(!calc$lock)) {
-    updatePickerInput(session, "p1_state_dropdown", selected = calc$state_choice)
-    updatePickerInput(session, "p2_state_dropdown", selected = calc$state_choice)
-    updatePickerInput(session, "p3_state_dropdown", selected = calc$state_choice)
-    updatePickerInput(session, "p4_state_dropdown", selected = calc$state_choice)
-    # }
-    # else {
-    #   if((calc$p1_state_choice() == calc$state_choice) & (calc$p2_state_choice() == calc$state_choice) & (calc$p3_state_choice() == calc$state_choice) & (calc$p4_state_choice() == calc$state_choice)) {
-    #     calc$lock <- TRUE
-    #   }
-    # }
-  })
-  
-  observeEvent(calc$state_choice, {
-    # if(isolate(calc$lock)) {
-      calc$p1_state_choice(calc$state_choice)
-      calc$p2_state_choice(calc$state_choice)
-      calc$p3_state_choice(calc$state_choice)
-      calc$p4_state_choice(calc$state_choice)
-    # }
-  })
-  
-}
-
-
-# serv_calc[[2]] <- function(calc, session) {
-#   calc$lock.key <- reactive({
-#     calc$lock <- FALSE
-#   })
-#   
-#   
-#   
-#   # calc$update.pickers <- 
-#   observe({
-#     calc$state_choice
-#     
-#     
-#     # invalidateLater(1000)
-#     
-#     if (isolate(calc$lock)) {
-#     # isolate(calc$lock <- TRUE)
-#       updatePickerInput(session,"p1_state_dropdown", select = calc$state_choice)
-#       updatePickerInput(session,"p2_state_dropdown", select = calc$state_choice)
-#       updatePickerInput(session,"p3_state_dropdown", select = calc$state_choice)
-#       updatePickerInput(session,"p4_state_dropdown", select = calc$state_choice)
-#       # if((calc$p1_state_choice == calc$state_choice) && (calc$p2_state_choice == calc$state_choice) && (calc$p3_state_choice == calc$state_choice) && (calc$p4_state_choice == calc$state_choice)) {
-#       #   calc$lock.key()
-#       # }
-#     }
-#   })
-#     
-#   calc$time <- reactiveTimer(1000)
-#   
-#   observe({
-#     req(calc$state_choice)
-# 
-#     # calc$time()
-# 
-#     invalidateLater(1000, session)
-# 
-#     calc$p1_good <- TRUE
-#     calc$p2_good <- TRUE
-#     calc$p3_good <- TRUE
-#     calc$p4_good <- TRUE
-# 
-# 
-#     # if(isolate(calc$lock)) {
-#       if (exists("calc$p1_state_choice")) {
-#         if (calc$state_choice != calc$p1_state_choice) {
-#           # updatePickerInput(session,"p1_state_choice", select = calc$state_choice)
-#           calc$p1_good <- FALSE
-#         }
-#       }
-#       if (exists("calc$p2_state_choice")) {
-#         if (calc$state_choice != calc$p2_state_choice) {
-#           # updatePickerInput(session,"p2_state_choice", select = calc$state_choice)
-#           calc$p2_good <- FALSE
-#         }
-#       }
-#       if (exists("calc$p3_state_choice")) {
-#         if (calc$state_choice != calc$p3_state_choice) {
-#           # updatePickerInput(session,"p3_state_choice", select = calc$state_choice)
-#           calc$p3_good <- FALSE
-#         }
-#       }
-#       if (exists("calc$p4_state_choice")) {
-#         if (calc$state_choice != calc$p4_state_choice) {
-#           # updatePickerInput(session,"p4_state_choice", select = calc$state_choice)
-#           calc$p4_good <- FALSE
-#         }
-#       }
-#       if (calc$p1_good & calc$p2_good & calc$p3_good & calc$p4_good) {
-#         calc$lock <- FALSE
-#       }
-#       # else {
-#       #   calc$update.pickers()
-#       # }
-#     # }
-#   })
-#   
-#   observeEvent(calc$p1_state_choice, {
-#     if (isolate(!calc$lock)) {
-#       isolate(calc$lock <- TRUE)
-#       calc$state_choice <- calc$p1_state_choice
-#       # calc$update.pickers()
-#     }
-#   })
-#   observeEvent(calc$p2_state_choice, {
-#     if (isolate(!calc$lock)) {
-#       isolate(calc$lock <- TRUE)
-#       calc$state_choice <- calc$p2_state_choice
-#       # isolate(calc$lock <- TRUE)
-#       # calc$update.pickers()
-#     }
-#   })
-#   observeEvent(calc$p3_state_choice, {
-#     if (isolate(!calc$lock)) {
-#       isolate(calc$lock <- TRUE)
-#       calc$state_choice <- calc$p3_state_choice
-#       # isolate(calc$lock <- TRUE)
-#       # calc$update.pickers()
-#     }
-#   })
-#   observeEvent(calc$p4_state_choice, {
-#     if (isolate(!calc$lock)) {
-#       isolate(calc$lock <- TRUE)
-#       calc$state_choice <- calc$p4_state_choice
-#       # isolate(calc$lock <- TRUE)
-#       # calc$update.pickers()
-#     }
-#   })
-# 
-# 
-#   
-# }
-
-serv_calc[[4]] <- function(calc, session) {
   observeEvent(calc$p1_death_cause, {
     calc$death_cause <- calc$p1_death_cause
     
@@ -1001,6 +878,25 @@ serv_calc[[4]] <- function(calc, session) {
   
   
 }
+
+serv_calc[[4]] <- function(calc, session) {
+  observeEvent(calc$p1_push {
+    calc$state_choice <- calc$p1_state_hold
+  })
+  
+  observeEvent(calc$p2_push {
+    calc$state_choice <- calc$p2_state_hold
+  })
+  
+  observeEvent(calc$p3_push {
+    calc$state_choice <- calc$p3_state_hold
+  })
+  
+  observeEvent(calc$p4_push {
+    calc$state_choice <- calc$p4_state_hold
+  })
+}
+
 
 #Extracting the national mean
 serv_calc[[5]] <- function(calc, session) {
@@ -1367,21 +1263,6 @@ serv_calc[[22]] <- function(calc, session) {
   })
 }
 
-  # click on bar plot triggers page change
-serv_calc[[23]] <- function(calc, session) {
-  observe({
-    req(calc$page1_bar_plot_click) # Same as if-not-NULL
-    click <- calc$page1_bar_plot_click
-    
-
-    point <- nearPoints(kendall_cor_new, click, threshold = 50, maxpoints = 1, addDist = TRUE)
-    
-    if (nrow(point) == 0) return(NULL)
-    
-    updatePickerInput(session, "determinant_choice", selected = point$chr_code)
-  })
-}
-
 
 #######################################################################
 ######################### Server Output ###############################
@@ -1390,12 +1271,6 @@ serv_calc[[23]] <- function(calc, session) {
 
 
 serv_out <- list()
-
-serv_out[["aboutMM"]] <- function(calc, session) {
-  renderText({
-    paste("About Mortality Minder", calc$lock, "<sc>", calc$state_choice, "<'sc>", calc$p1_state_choice, calc$p2_state_choice, calc$p3_state_choice, calc$p4_state_choice)
-  })
-}
 
 serv_out[["p1_death_selector"]] <- function(calc, session) {
   renderUI({
@@ -1468,7 +1343,7 @@ serv_out[["p4_death_selector"]] <- function(calc, session) {
 serv_out[["p1_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
-      inputId = "p1_state_dropdown",
+      inputId = "p1_state_choice",
       label = h4("State"), 
       choices = state.list,
       selected = NULL,
@@ -1485,7 +1360,7 @@ serv_out[["p1_state_selector"]] <- function(calc, session) {
 serv_out[["p2_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
-      inputId = "p2_state_dropdown",
+      inputId = "p2_state_choice",
       label = h4("State"), 
       choices = state.list,
       selected = NULL,
@@ -1502,7 +1377,7 @@ serv_out[["p2_state_selector"]] <- function(calc, session) {
 serv_out[["p3_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
-      inputId = "p3_state_dropdown",
+      inputId = "p3_state_choice",
       label = h4("State"), 
       choices = state.list,
       selected = NULL,
@@ -1519,7 +1394,7 @@ serv_out[["p3_state_selector"]] <- function(calc, session) {
 serv_out[["p4_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
-      inputId = "p4_state_dropdown",
+      inputId = "p4_state_choice",
       label = h4("State"), 
       choices = state.list,
       selected = NULL,
@@ -1530,6 +1405,30 @@ serv_out[["p4_state_selector"]] <- function(calc, session) {
         `max-options` = 1
       )      
     )
+  })
+}
+
+serv_out[["p1_updater"]] <- function(calc, session) {
+  renderUI({
+    actionButton("p1_push", "Update")
+  })
+}
+
+serv_out[["p2_updater"]] <- function(calc, session) {
+  renderUI({
+    actionButton("p2_push", "Update")
+  })
+}
+
+serv_out[["p3_updater"]] <- function(calc, session) {
+  renderUI({
+    actionButton("p3_push", "Update")
+  })
+}
+
+serv_out[["p4_updater"]] <- function(calc, session) {
+  renderUI({
+    actionButton("p4_push", "Update")
   })
 }
 
@@ -1620,18 +1519,11 @@ serv_out[["determinant_text"]] <- function(calc, session) {
         SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Reason"
       )
     }
-    calc$lock_str <- ""
-    calc$state_str <- paste("<sc>", calc$state_choice, "</sc>", calc$p1_state_choice(), calc$p2_state_choice(), calc$p3_state_choice(), calc$p4_state_choice())
-    if (calc$lock) {
-      calc$lock_str <- "locked"
-      
-    }
-    else {
-      calc$lock_str <- "unlocked"
-    }
+    
+    state_str <- paste("<sc>", calc$state_choice, "<1>", calc$p1_state_choice, "<2>", calc$p2_state_choice, "<3>", calc$p3_state_choice, "<4>", calc$p4_state_choice)
     tagList(
       tags$h3(
-        paste0("DEFINITION: ", calc$lock_str, calc$state_str, as.character(
+        paste0("DEFINITION: ",  state_str, as.character(
           SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Definitions")
         )),
       tags$h5(paste0("EXPLANATION: ",reason_text))
@@ -2499,390 +2391,6 @@ serv_out[["geo_mort_change2"]] <- function(calc, session) {
     
   })
 }
-
-
-# Kendall Correlation Between Cluster and CHR-SD
-serv_out[["page1.bar.cor1"]] <- function(calc, session) {
-  renderPlot({
-    
-    # Sort by kendall.cor
-    calc$kendall.cor.new <- calc$kendall.cor() %>% 
-      dplyr::filter(kendall_p < 0.1) %>% 
-      dplyr::arrange(desc(kendall_cor)) %>% 
-      dplyr::top_n(15, abs(kendall_cor)) %>% 
-      dplyr::mutate(chr_code = reorder(chr_code, kendall_cor))
-    
-    # # Set currently selected determinant to most correlated determinant
-    # max.cor.ind = which.max(abs(calc$kendall.cor.new$kendall_cor))
-    # calc$determinant_choice = calc$kendall.cor.new[max.cor.ind, "chr_code"]
-    
-    #Only display the social determinants graph if there is any significant social determinant
-    #Ex: New Hampshire, Delaware doesn't have any significant social determinant with p < 0.05
-    if(nrow(calc$kendall.cor.new) > 0) {
-      updatePickerInput(session, "determinant_choice", selected = calc$kendall.cor.new$chr_code[[1]])
-      calc$kendall.cor.new %>% 
-        ggplot(
-          aes(
-            #x = reorder(chr_code, kendall_cor), 
-            x = chr_code, 
-            y = kendall_cor, 
-            color = DIR, 
-            fill = DIR)
-        ) + 
-        
-        # Lolipop chart
-        geom_point(stat = 'identity', size = 12) + 
-        geom_segment(
-          size = 1,
-          aes(
-            y = 0, 
-            #x = reorder(chr_code, kendall_cor), 
-            x = chr_code, 
-            yend = kendall_cor, 
-            #xend = reorder(chr_code, kendall_cor), 
-            xend = chr_code, 
-            color = DIR
-          )
-        ) +
-        geom_text(
-          aes(
-            label = chr_code, 
-            y = ifelse(DIR == "Protective", 0.1, -0.1),
-            hjust = ifelse(DIR == "Protective", 0, 1)
-          ), 
-          color = "#565254", 
-          size = 4
-        ) +
-        geom_text(
-          aes(label = round(kendall_cor, 2)), 
-          color = "#565254", 
-          size = 3
-        ) +
-        
-        # Coordinates
-        coord_flip() + 
-        scale_y_continuous(breaks = seq(-1, 1, by = .2), limits = c(-1, 1)) +
-        
-        # Themes
-        geom_hline(yintercept = .0, linetype = "dashed") + 
-        labs(
-          y = "Correlation",
-          x = NULL,
-          fill = "Relationship",
-          color = "Relationship"
-        ) +
-        theme_minimal() +
-        theme.text() + 
-        theme.background() + 
-        theme(
-          axis.text.y = element_blank(),
-          axis.text.x = element_text(size = 12),
-          axis.title.x = element_text(size = 12),
-          panel.grid.major.y = element_blank()
-        ) + 
-        theme(legend.position="top")
-    }
-    #Display something else when there are no significant SD
-    else {
-      
-      # empty plot, then put text on it ?
-      ggplot() + theme_void() +
-        geom_text(aes(x = 0, y = 0, label="There are no significant social determinants."))
-      
-    }
-  }, bg = "transparent")
-}
-
-# Determinant Header (upper-right panel, Page 1)
-serv_out[["textDeterminants"]] <- function(calc, session) {
-  renderUI({
-    # We reference state.list, cause.list and cause.definitions defined above
-    if(calc$state_choice == "United States") {
-      location_str <- "the United States" 
-      tagList(
-        tags$h3(
-          title="Each factor is rated as Destructive, meaning that it has a positive correlation with the risk group; or Protective, meaning it has a negative correlation with the risk group. MortalityMinder shows those factors which have the highest absolute correlation with mortality risk groups For more information on the method of determining correlation please see GitHub Wiki.", 
-          paste0("Factors Associated with ",names(which(cause.list == calc$death_cause)), " for ", location_str),
-          icon("info-circle")
-        ),
-        HTML("<h5>Kendall Correlation between social and economic factors and mortality risk groups. <span style='color:#f8766d'>Positively</span> (<span style='color:#00bfc4'>Negatively</span>) correlated factors indicate potential <span style='color:#f8766d'>Destructive</span> (<span style='color:#00bfc4'>Protective</span>) determinants of mortality. Click dot for details.</h5>"),
-        NULL
-      )
-    }
-    else {
-      tagList(
-        tags$h3(
-          title="Each factor is rated as Destructive, meaning that it has a positive correlation with the risk group; or Protective, meaning it has a negative correlation with the risk group. MortalityMinder shows those factors which have the highest absolute correlation with mortality risk groups. For more information on the method of determining correlation please see GitHub Wiki.", 
-          paste0("Factors Associated with ",names(which(cause.list == calc$death_cause)), " for ", names(which(state.list == calc$state_choice))),
-          icon("info-circle")
-        ),
-        HTML("<h5>Kendall Correlation between social and economic factors and mortality risk groups. <span style='color:#f8766d'>Positively</span> (<span style='color:#00bfc4'>Negatively</span>) correlated factors indicate potential <span style='color:#f8766d'>Destructive</span> (<span style='color:#00bfc4'>Protective</span>) determinants of mortality. Click dot for details.</h5>"),
-        NULL
-      )
-    }
-  })
-}
-
-
-# Mortality Rate Trend Line Graph
-serv_out[["mort_line"]] <- function(calc, session) {
-  renderPlot({
-    
-    if (calc$state_choice == "United States"){
-      
-      total.data <- rbind(calc$mort.avg.cluster.ord(), calc$national.mean())
-      total.data$cluster[total.data$cluster == 1] <- "1: Low"
-      total.data$cluster[total.data$cluster == 6] <- "6: High"
-      
-      ggplot(
-        total.data,
-        aes(
-          x = period, y = death_rate, 
-          color = cluster, group = cluster
-        )
-      ) + 
-        geom_line(size = 1.5) + 
-        geom_point(color = "#565254", shape = 21, fill = "#f7f7f7", size = 2) + 
-        # labs.line.mort(calc$state_choice, calc$death_cause) + 
-        scale_color_manual(
-          values = theme.categorical.colors.accent(max(calc$mort.cluster.ord()$cluster))) +
-        theme.line.mort() + 
-        theme(legend.position = "left") + 
-        ylab("Average Midlife Deaths per 100,000") +
-        labs(
-          fill = "Cluster", 
-          color = "Cluster",
-          caption = "Mortality Data: CDC WONDER Detailed Mortality\nFeature Data: County Health Rankings\nAnalysis: The Rensselaer IDEA"
-        ) +
-        guides(
-          color = guide_legend(
-            reverse = T,
-            title = "Risk Group:")
-        )
-    } else {
-      
-      nclusters <- max(calc$mort.cluster.raw()$cluster)
-      total.data <- rbind(calc$mort.avg.cluster.ord(), calc$national.mean())
-      
-      if (calc$state_choice == "DE") {
-        
-        exceptions.data <- cdc.data %>%
-          dplyr::filter(death_cause == calc$death_cause) %>%
-          dplyr::right_join(calc$mort.cluster.raw(), by = "county_fips")
-        exceptions.data$cluster <- exceptions.data$county_name
-        exceptions.data <- exceptions.data %>%
-          dplyr::group_by(period, cluster) %>%
-          dplyr::summarise(
-            death_rate = sum(death_num) / max(sum(population), 1) * 10^5,
-            count = n()
-          ) %>%
-          dplyr::ungroup()
-        exceptions.data <- rbind(exceptions.data, calc$national.mean())
-        extras.color <- rbind(calc$mort.avg.cluster.ord(), calc$national.mean())
-        colnames(extras.color)[2] <- "cluster.num"
-        exceptions.data <- cbind(exceptions.data, extras.color$cluster.num)
-        colnames(exceptions.data)[5] <- "cluster.num"
-        
-        
-        line_plot <- ggplot(
-          exceptions.data,
-          aes(
-            x = period, y = death_rate, 
-            color = cluster.num, group = cluster.num
-          )
-        ) + 
-          geom_line(size = 1.5) + 
-          geom_point(color = "black", shape = 21, fill = "white", size = 2) + 
-          # labs.line.mort(calc$state_choice, calc$death_cause) + 
-          scale_color_manual(
-            values = c(theme.categorical.colors(nclusters), "#0571b0"), labels = c("Kent", "New Castle", "Sussex", "National")) +
-          theme.line.mort() + 
-          theme(legend.position = "left") + 
-          guides(color = guide_legend(reverse = T)) +
-          labs(fill = "Counties and \n National Average", 
-               color = "Counties and \n National Average",
-               caption = "Mortality Data: CDC Wonder Detailed Mortality\nFeature Data: County Health Rankings\nAnalysis: The Rensselaer IDEA"
-          ) + 
-          ylab("Average Midlife Deaths per 100,000")
-        line_plot
-        
-      } else if (calc$state_choice == "HI") {
-        
-        exceptions.data <- cdc.data %>%
-          dplyr::filter(death_cause == calc$death_cause) %>%
-          dplyr::right_join(calc$mort.cluster.raw(), by = "county_fips")
-        exceptions.data$cluster <- exceptions.data$county_name
-        exceptions.data <- exceptions.data %>%
-          dplyr::group_by(period, cluster) %>%
-          dplyr::summarise(
-            death_rate = sum(death_num) / max(sum(population), 1) * 10^5,
-            count = n()
-          ) %>%
-          dplyr::ungroup()
-        exceptions.data <- rbind(exceptions.data, calc$national.mean())
-        extras.color <- rbind(calc$mort.avg.cluster.ord(), calc$national.mean())
-        colnames(extras.color)[2] <- "cluster.num"
-        exceptions.data <- cbind(exceptions.data, extras.color$cluster.num)
-        colnames(exceptions.data)[5] <- "cluster.num"
-        
-        line_plot <- ggplot(
-          exceptions.data,
-          aes(
-            x = period, y = death_rate, 
-            color = cluster.num, group = cluster.num
-          )
-        ) + 
-          geom_line(size = 1.5) + 
-          geom_point(color = "black", shape = 21, fill = "white", size = 2) + 
-          # labs.line.mort(calc$state_choice, calc$death_cause) + 
-          scale_color_manual(
-            values = c(theme.categorical.colors(nclusters), "#0571b0"), labels = c("Kalawao", "Honolulu" , "Maui", "Hawaii", "Kauai", "National")) +
-          theme.line.mort() + 
-          theme(legend.position = "left") + 
-          guides(color = guide_legend(reverse = T)) +
-          labs(fill = "Counties and \n National Average", 
-               color = "Counties and \n National Average",
-               caption = "Mortality Data: CDC Wonder Detailed Mortality\nFeature Data: County Health Rankings\nAnalysis: The Rensselaer IDEA"
-          ) + 
-          ylab("Average Midlife deaths per 100,000")
-        line_plot
-        
-      } else if (calc$state_choice == "RI") {
-        
-        exceptions.data <- cdc.data %>%
-          dplyr::filter(death_cause == calc$death_cause) %>%
-          dplyr::right_join(calc$mort.cluster.raw(), by = "county_fips")
-        exceptions.data$cluster <- exceptions.data$county_name
-        exceptions.data <- exceptions.data %>%
-          dplyr::group_by(period, cluster) %>%
-          dplyr::summarise(
-            death_rate = sum(death_num) / max(sum(population), 1) * 10^5,
-            count = n()
-          ) %>%
-          dplyr::ungroup()
-        exceptions.data <- rbind(exceptions.data, calc$national.mean())
-        extras.color <- rbind(calc$mort.avg.cluster.ord(), calc$national.mean())
-        colnames(extras.color)[2] <- "cluster.num"
-        exceptions.data <- cbind(exceptions.data, extras.color$cluster.num)
-        colnames(exceptions.data)[5] <- "cluster.num"
-        
-        line_plot <- ggplot(
-          exceptions.data,
-          aes(
-            x = period, y = death_rate, 
-            color = cluster.num, group = cluster.num
-          )
-        ) + 
-          geom_line(size = 1.5) + 
-          geom_point(color = "black", shape = 21, fill = "white", size = 2) + 
-          # labs.line.mort(calc$state_choice, calc$death_cause) + 
-          scale_color_manual(
-            values = c(theme.categorical.colors(nclusters), "#0571b0"), labels = c("Bristol", "Washington", "Newport", "Kent", "Providence", "National")) +
-          theme.line.mort() + 
-          theme(legend.position = "left") + 
-          guides(color = guide_legend(reverse = T)) +
-          labs(fill = "Counties and \n National Average", 
-               color = "Counties and \n National Average",
-               caption = "Mortality Data: CDC Wonder Detailed Mortality\nFeature Data: County Health Rankings\nAnalysis: The Rensselaer IDEA"
-          ) + 
-          ylab("Average Midlife Deaths per 100,000")
-        line_plot 
-        
-      } else {
-        
-        total.data$cluster[total.data$cluster == 1] <- "1: Low"
-        total.data$cluster[total.data$cluster == 2] <- "2: Medium"
-        total.data$cluster[total.data$cluster == 3] <- "3: High"
-        # total.data$cluster <- as_factor(total.data$cluster)
-        
-        # total.data$cluster_label[total.data$cluster == "1"] <- "Low"
-        # total.data$cluster_label[total.data$cluster == "2"] <- "Medium"
-        # total.data$cluster_label[total.data$cluster == "3"] <- "High"
-        # total.data$cluster_label[total.data$cluster == "National"] <- "National"
-        # total.data$cluster_label <- as_factor(total.data$cluster_label)
-        
-        line_plot <- ggplot(
-          total.data,
-          aes(
-            x = period, y = death_rate, color = cluster,
-            group = cluster
-          )
-        ) + 
-          geom_line(size = 1.5) + 
-          geom_point(color = "#565254", shape = 21, fill = "#f7f7f7", size = 2) + 
-          # labs.line.mort(calc$state_choice, calc$death_cause) + 
-          scale_color_manual(
-            values = theme.categorical.colors.accent(nclusters)) +
-          theme.line.mort() + 
-          theme(legend.position = "left") + 
-          guides(color = guide_legend(
-            reverse = T,
-            title = "Risk Group:")) +
-          labs(fill = "Cluster", 
-               color = "Cluster",
-               caption = "Mortality Data: CDC Wonder Detailed Mortality\nFeature Data: County Health Rankings\nAnalysis: The Rensselaer IDEA"
-          ) + 
-          ylab("Average Midlife Deaths per 100,000") 
-        
-        if (is.null(calc$county_choice())){
-          line_plot
-        } else {
-          drop.cols <- c('county_fips')
-          county_data <- cdc.countymort.mat(cdc.data, calc$state_choice, calc$county_choice(), calc$death_cause)
-          
-          canShow <- dplyr::inner_join(county_data, cdc.original.data, by = 'county_fips') %>% 
-            dplyr::filter(
-              death_cause == calc$death_cause
-            )
-          if (nrow(county_data) == 0 | any(is.na(canShow$death_rate))) {
-            line_plot + xlab("period\nCould not plot county as data suppressed")
-          } else {
-            county_data <- county_data %>%
-              dplyr::select(-drop.cols) %>%
-              tidyr::gather("period", "death_rate", "2000-2002":"2015-2017") %>%
-              dplyr::mutate("county" = calc$county_choice())
-            line_plot + 
-              geom_line(
-                mapping = aes(x = period, y = death_rate, group = county, linetype=calc$county_choice()),
-                data = county_data, color = "#565254", size = 1.3
-              ) +
-              geom_point(
-                mapping = aes(x = period, y = death_rate),
-                data = county_data, color = "#565254", shape = 21, 
-                fill = "#f7f7f7", inherit.aes = FALSE, size = 2
-              ) +
-              scale_linetype_manual(name = "County",
-                                    values = c("twodash"),
-                                    guide = guide_legend(override.aes = list(color = c("#565254")))
-              )
-          }
-        }
-      }
-    }
-    
-  },bg="transparent")
-}
-
-
-serv_out[["textMortFactsNew"]] <- function(calc, session) {
-  renderUI({
-    # We reference state.list, cause.list and cause.definitions defined above
-    
-    tagList(
-      tags$h4(
-        title ="Midlife mortality rates are obtained from the CDC WONDER Detailed Mortality Online Mortality Database.  Separate crude death rates are queried  for adults 25 to 64 at the county, state, and nationwide levels for each cause of death.  Rates are not age adjusted. Unreliable or missing rates are imputed. See Project Overview for details.",
-        paste0("Midlife Mortality Rate: Deaths per 100,000 for adults ages 25-64 due to ",
-               names(which(cause.list == calc$death_cause)), 
-               " for three year periods for counties (left) and state and nation (right)."
-        ), icon("info-circle")
-      ),
-      HTML("<h5>Data Source: CDC WONDER<br>Analysis: The Rensselaer Institute for Data Exploration and Applications 
-             (<a href='http://idea.rpi.edu' target=_Blank>The Rensselaer IDEA</a>)</h5>")
-    )
-  })
-}
-
-
 
 # ----------------------------------------------------------------------
 #   # Functions for data download
