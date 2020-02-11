@@ -726,176 +726,65 @@ highlight_county <- function(event){
 
 serv_calc <- list()
 
-# This calc is for synchronizing the state nav bar selection across pages as
-# well as create a universal state_choice value. Each observeEvent checks for
-# a picker to change, then it updates each other page's picker
-# serv_calc[[1]] <- function(calc, session) {
-#   if(!exists("calc$state_choice")) {
-#     calc$lock <- FALSE
-#     calc$p1_state_rv <- reactiveVal({})
-#     calc$p2_state_rv <- reactiveVal({})
-#     calc$p3_state_rv <- reactiveVal({})
-#     calc$p4_state_rv <- reactiveVal({})
-#     calc$state_choice <- "OH"
-#   }
-#   if(!exists("calc$death_cause")) {
-#     calc$death_cause <- "Despair"
-#   }
-# }  
-# 
-# serv_calc[[2]] <- function(calc, session) {
-#   
-#   # lock stops an issue where changing between states on two different
-#   # pages rapidly causes the state to enter an endless loop of switching
-#   # between the state on the page. lock only allows one state change per
-#   # two seconds. This stops spamming choices
-#   observe({
-#     invalidateLater(2000)
-#     updatePickerInput(session, "")
-#     calc$lock <- FALSE
-#   })
-#   
-# 
-#   
-#   observeEvent(calc$p1_state_choice, {
-#     if(isolate(!calc$lock)) {
-#       calc$lock <- TRUE
-#       calc$state_choice <- calc$p1_state_choice
-#     }
-#   })
-#   observeEvent(calc$p2_state_choice, {
-#     if(isolate(!calc$lock)) {
-#       calc$lock <- TRUE
-#       calc$state_choice <- calc$p2_state_choice
-#     }
-#   })
-#   observeEvent(calc$p3_state_choice, {
-#     if(isolate(!calc$lock)) {
-#       calc$lock <- TRUE
-#       calc$state_choice <- calc$p3_state_choice
-#     }
-#   })
-#   observeEvent(calc$p4_state_choice, {
-#     if(isolate(!calc$lock)) {
-#       calc$lock <- TRUE
-#       calc$state_choice <- calc$p4_state_choice
-#     }
-#   })
-#   
-#   observeEvent(calc$state_choice,{
-#     calc$p1_state_rv(calc$state_choice)
-#     calc$p2_state_rv(calc$state_choice)
-#     calc$p3_state_rv(calc$state_choice)
-#     calc$p4_state_rv(calc$state_choice)
-#     
-#     updatePickerInput(session, "p1_state_choice", select = calc$state_choice)
-#     updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
-#     updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
-#     updatePickerInput(session, "p4_state_choice", select = calc$state_choice)
-#     
-#   })
-#   
-#   
-#   
-# }
-
+# This calc initializes the navbar selections immediately. It is auto-
+# invalidated when the app runs. It updates state_choice and death_cause
+# which calc[[3]] uses to update all the pickers. After that, it self
+# destructs and never runs again
 serv_calc[[1]] <- function(calc, session) {
-  if(!exists("calc$state_choice")) {
+  # if(!exists("calc$state_choice")) {
+  calc$onInit <- observe({
+    invalidateLater(0)
     calc$state_choice <- "OH"
-    calc$p1_state_hold <- "OH"
-    calc$p2_state_hold <- "OH"
-    calc$p3_state_hold <- "OH"
-    calc$p4_state_hold <- "OH"
-    calc$state_choice <- "OH"
-    # updatePickerInput(session, "p1_state_choice", select = calc$state_choice)
-    # updatePickerInput(session, "p2_state_choice", select = calc$state_choice)
-    # updatePickerInput(session, "p3_state_choice", select = calc$state_choice)
-    # updatePickerInput(session, "p4_state_choice", select = calc$state_choice)
-    
-  }
-  if(!exists("calc$death_cause")) {
     calc$death_cause <- "Despair"
-  }
+    calc$onInit$destroy()
+  })
 }  
 
+# The update button changes state_choice and death_cause, which invalidates
+# calc[[3]]. choice and cause can only be updated by pressing the button.
+# Previous versions used the dropdown selection as the method for change
+# but this ended up causing issues
 serv_calc[[2]] <- function(calc, session) {
-  observeEvent(calc$p1_state_choice, {
-    calc$p1_state_hold <- calc$p1_state_choice
-    
+  observeEvent(calc$p1_push, {
+    calc$state_choice <- calc$p1_state_choice
+    calc$death_cause <- calc$p1_death_cause
+
   })
-  observeEvent(calc$p2_state_choice, {
-    calc$p2_state_hold <- calc$p2_state_choice
+  observeEvent(calc$p2_push, {
+    calc$state_choice <- calc$p2_state_choice
+    calc$death_cause <- calc$p2_death_cause
   })
-  observeEvent(calc$p3_state_choice, {
-    calc$p3_state_hold <- calc$p3_state_choice
+  observeEvent(calc$p3_push, {
+    calc$state_choice <- calc$p3_state_choice
+    calc$death_cause <- calc$p3_death_cause
   })
-  observeEvent(calc$p4_state_choice, {
-    calc$p4_state_hold <- calc$p4_state_choice
+  observeEvent(calc$p4_push, {
+    calc$state_choice <- calc$p4_state_choice
+    calc$death_cause <- calc$p4_death_cause
   })
-  
-  observeEvent(calc$state_choice {
-    calc$p1_state_hold <- calc$state_choice
-    calc$p2_state_hold <- calc$state_choice
-    calc$p3_state_hold <- calc$state_choice
-    calc$p4_state_hold <- calc$state_choice
-  })
-  
-  # observeEvent(invalidateLater(1000),{
-  #   updatePickerInput(session, "p1_state_choice", select = calc$p1_state_hold)
-  #   updatePickerInput(session, "p2_state_choice", select = calc$p2_state_hold)
-  #   updatePickerInput(session, "p3_state_choice", select = calc$p3_state_hold)
-  #   updatePickerInput(session, "p4_state_choice", select = calc$p4_state_hold)
-  # 
-  # })
-  
-  
 }
 
+# When state_choice or death_cause are changed, this calc updates
+# all the pickers across the open pages
 serv_calc[[3]] <- function(calc, session) {
-  observeEvent(calc$p1_death_cause, {
-    calc$death_cause <- calc$p1_death_cause
-    
-  })
-  observeEvent(calc$p2_death_cause, {
-    calc$death_cause <- calc$p2_death_cause
-    
-  })
-  observeEvent(calc$p3_death_cause, {
-    calc$death_cause <- calc$p3_death_cause
-    
-  })
-  observeEvent(calc$p4_death_cause, {
-    calc$death_cause <- calc$p4_death_cause
-    
+  observeEvent(calc$state_choice, {
+    updatePickerInput(session, "p1_state_choice", selected = calc$state_choice)
+    updatePickerInput(session, "p2_state_choice", selected = calc$state_choice)
+    updatePickerInput(session, "p3_state_choice", selected = calc$state_choice)
+    updatePickerInput(session, "p4_state_choice", selected = calc$state_choice)
   })
   
   observeEvent(calc$death_cause, {
-    updatePickerInput(session,"p1_death_cause", select = calc$death_cause)
-    updatePickerInput(session, "p2_death_cause", select = calc$death_cause)
-    updatePickerInput(session, "p3_death_cause", select = calc$death_cause)
-    updatePickerInput(session, "p4_death_cause", select = calc$death_cause)
+    updatePickerInput(session, "p1_death_cause", selected = calc$death_cause)
+    updatePickerInput(session, "p2_death_cause", selected = calc$death_cause)
+    updatePickerInput(session, "p3_death_cause", selected = calc$death_cause)
+    updatePickerInput(session, "p4_death_cause", selected = calc$death_cause)
   })
   
   
 }
 
-serv_calc[[4]] <- function(calc, session) {
-  observeEvent(calc$p1_push {
-    calc$state_choice <- calc$p1_state_hold
-  })
-  
-  observeEvent(calc$p2_push {
-    calc$state_choice <- calc$p2_state_hold
-  })
-  
-  observeEvent(calc$p3_push {
-    calc$state_choice <- calc$p3_state_hold
-  })
-  
-  observeEvent(calc$p4_push {
-    calc$state_choice <- calc$p4_state_hold
-  })
-}
+serv_calc[[4]] <- function(calc, session) {}
 
 
 #Extracting the national mean
@@ -1272,6 +1161,12 @@ serv_calc[[22]] <- function(calc, session) {
 
 serv_out <- list()
 
+
+# This collection of selectors (p1-4 state and death selectors) all
+# function similarly. They are the pickerinputs in the navbar for state
+# choice and cause of death. Brought down here to better use reactive
+# elements. Also, turned into a multiple select with only 1 option
+# helped some interaction but I forget exactly which one
 serv_out[["p1_death_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
@@ -1288,7 +1183,6 @@ serv_out[["p1_death_selector"]] <- function(calc, session) {
     )
   })
 }
-
 serv_out[["p2_death_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
@@ -1305,7 +1199,6 @@ serv_out[["p2_death_selector"]] <- function(calc, session) {
     )
   })
 }
-
 serv_out[["p3_death_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
@@ -1322,7 +1215,6 @@ serv_out[["p3_death_selector"]] <- function(calc, session) {
     )
   })
 }
-
 serv_out[["p4_death_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
@@ -1356,7 +1248,6 @@ serv_out[["p1_state_selector"]] <- function(calc, session) {
     )
   })
 }
-
 serv_out[["p2_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
@@ -1373,7 +1264,6 @@ serv_out[["p2_state_selector"]] <- function(calc, session) {
     )
   })
 }
-
 serv_out[["p3_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
@@ -1390,7 +1280,6 @@ serv_out[["p3_state_selector"]] <- function(calc, session) {
     )
   })
 }
-
 serv_out[["p4_state_selector"]] <- function(calc, session) {
   renderUI({
     pickerInput(
@@ -1408,24 +1297,28 @@ serv_out[["p4_state_selector"]] <- function(calc, session) {
   })
 }
 
+# These buttons are a personal addition, not from the live MM
+# app. The navbar was having a wide variety of synchronization
+# issues. I tried like forty different things but in the end,
+# this was the thing that worked. I didn't want to alter the way
+# the mw version looks compared to the live version, but it
+# ended having too many problems one way or the other to do it
+# any other way
 serv_out[["p1_updater"]] <- function(calc, session) {
   renderUI({
     actionButton("p1_push", "Update")
   })
 }
-
 serv_out[["p2_updater"]] <- function(calc, session) {
   renderUI({
     actionButton("p2_push", "Update")
   })
 }
-
 serv_out[["p3_updater"]] <- function(calc, session) {
   renderUI({
     actionButton("p3_push", "Update")
   })
 }
-
 serv_out[["p4_updater"]] <- function(calc, session) {
   renderUI({
     actionButton("p4_push", "Update")
@@ -1520,10 +1413,9 @@ serv_out[["determinant_text"]] <- function(calc, session) {
       )
     }
     
-    state_str <- paste("<sc>", calc$state_choice, "<1>", calc$p1_state_choice, "<2>", calc$p2_state_choice, "<3>", calc$p3_state_choice, "<4>", calc$p4_state_choice)
     tagList(
       tags$h3(
-        paste0("DEFINITION: ",  state_str, as.character(
+        paste0("DEFINITION: ", as.character(
           SocialDeterminants[SocialDeterminants$Name == calc$determinant_choice,]$"Definitions")
         )),
       tags$h5(paste0("EXPLANATION: ",reason_text))
