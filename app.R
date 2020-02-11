@@ -718,7 +718,93 @@ highlight_county <- function(event){
 }
 
 
+generate_text <- function(name, diff_pct){
+  change_text <- paste0("The mortality rate \nhas ")
+  
+  if (diff_pct > 0) {
+    change_text <- paste0(change_text, "increased ")
+  }
+  else {
+    change_text <- paste0(change_text, "decreased ")
+  }
+  
+  change_text <- paste0(change_text, "in \n", name, " by ", abs(round(diff_pct,1)), "%")
+  change_text
+}
 
+generate_label_data <- function(state_data, nation_data, state_begin, state_end, nation_begin, nation_end, state_x, state_y, nation_x, nation_y, sc){
+  state_data <- state_data %>% 
+    mutate(label = "") %>% 
+    rename(x = period)
+  nation_data <- nation_data %>% 
+    mutate(label = "") %>% 
+    rename(x = period)
+  rbind(generate_label_data_single(state_data, sc, state_begin, state_end, state_x, state_y),
+        generate_label_data_single(nation_data, "United States", nation_begin, nation_end, nation_x, nation_y))
+}
+
+generate_label_data_single <- function(data, name, begin, end, label_x, label_y){
+  label_data = data.frame(data)
+  label_data$x[label_data$x=="2000-2002"] <- 1
+  label_data$x[label_data$x=="2003-2005"] <- 2
+  label_data$x[label_data$x=="2006-2008"] <- 3
+  label_data$x[label_data$x=="2009-2011"] <- 4
+  label_data$x[label_data$x=="2012-2014"] <- 5
+  label_data$x[label_data$x=="2015-2017"] <- 6
+  label_data$x <- as.numeric(as.character(label_data$x))
+  n <- 10
+  d_max <- 0
+  for (i in 1:5){
+    r1 <- label_data[label_data$x==i,]
+    r2 <- label_data[label_data$x==i+1,]
+    for (j in 1:n-1){
+      for (d in 0:d_max){
+        label_data <- rbind(label_data, data.frame("x" = i+j/n,
+                                                   "death_rate" = r2$death_rate*j/n+r1$death_rate*(n-j)/n-d,
+                                                   "label" = c(""),
+                                                   "group" = c(name)))
+        label_data <- rbind(label_data, data.frame("x" = i+j/n,
+                                                   "death_rate" = r2$death_rate*j/n+r1$death_rate*(n-j)/n+d,
+                                                   "label" = c(""),
+                                                   "group" = c(name)))
+      }
+    }
+  }
+  mort_diff <- (end - begin) / begin * 100
+  mort_text <- generate_text(name, mort_diff) 
+  
+  rbind(label_data,
+        data.frame("x" = label_x, 
+                   "death_rate" = label_y,
+                   "label" = mort_text,
+                   "group" = name))
+}
+
+draw_reference <- function(line_plot, l_start, l_end, r_start, r_end){
+  line_plot <- draw_reference_single(line_plot, l_start, l_end, 1, l_end)
+  draw_reference_single(line_plot, r_start, r_end, 6, r_start)
+}
+
+draw_reference_single <- function(line_plot, start, end, x, y){
+  line_plot +
+    geom_segment(aes(x='2000-2002', xend='2015-2017', y=y, yend=y),
+                 color = '#565254', linetype=2) +
+    geom_segment(aes(x=x, xend=x, y=start, yend=end),
+                 color = '#565254', linetype=1, arrow = arrow(length=unit(0.4,"cm")))
+}
+
+add_reference_point <- function(label_data, l_start, l_end, r_start, r_end){
+  label_data <- add_reference_point_single(label_data, l_start, l_end, 1, "United States")
+  add_reference_point_single(label_data, r_start, r_end, 6, "United States")
+}
+
+
+add_reference_point_single <- function(label_data, start, end, x, name){
+  rbind(label_data, data.frame("x" = rep(c(x), times = 6),
+                               "death_rate" = seq(start, end, length.out = 6),
+                               "label" = rep(c(""), times = 6),
+                               "group" = rep(c(name), times = 6)))
+}
 
 
 
@@ -2678,10 +2764,339 @@ serv_out[["textMortFactsNew"]] <- function(calc, session) {
            (<a href='http://idea.rpi.edu' target=_Blank>The Rensselaer IDEA</a>)</h5>")
       )
   })
+}
+
+
+serv_out[["textNationalTitle"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    
+    tagList(
+      tags$h1(
+        # paste0("Nationwide View: ",names(which(cause.list == calc$death_cause)), " Midlife Mortality Rates Over Time")
+        paste0(names(which(cause.list == calc$death_cause)), " Midlife Mortality Rates Over Time")
+      )
+    )
+  })
   }
+  
+serv_out[["textNationwideTitle"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    if (is.null(calc$page1_period)){
+      period_choice = 6
+    } else {
+      period_choice = calc$page1_period
+    }
+    
+    tagList(
+      tags$h3(
+        paste0("Nationwide ",names(which(cause.list == calc$death_cause)), " Rates for ", period.list[period_choice])
+      )
+    )
+  })
+}
 
+serv_out[["textMortFactsClosing"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    
+    tagList(
+      tags$h4(paste0(names(which(cause.definitions == calc$death_cause))))
+    )
+  })
+}
 
+serv_out[["textInfographicTitle"]] <- function(calc, session) {
+  renderUI({
+    # We reference state.list, cause.list and cause.definitions defined above
+    
+    if(calc$state_choice == "United States") {
+      location_str <- "the United States" 
+      tagList(
+        tags$h3(
+          paste0("Midlife Mortality Rates for ",
+                 names(which(cause.list == calc$death_cause)), 
+                 " in ", 
+                 location_str)
+        )
+      )
+    }
+    else {
+      location_str <- names(which(state.list == calc$state_choice))
+      tagList(
+        tags$h3(
+          paste0("Midlife Mortality Rates for ",
+                 names(which(cause.list == calc$death_cause)), 
+                 " in ", 
+                 location_str,
+                 " vs. United States")
+        )
+      )
+    }
+  })
+}
 
+  # Mortality Rate Trend Line Graph
+serv_out[["nation_state_infographic"]] <- function(calc, session) {
+  renderPlot({
+    u <- 0.65
+    v <- 1 - u
+    if (is.null(calc$page1_period)){
+      period_choice = 6
+    } else {
+      period_choice = calc$page1_period
+    }
+    
+    if (calc$state_choice == "United States"){
+      
+      nation_data <- dplyr::filter(
+        cdc.data,
+        death_cause == calc$death_cause
+      ) %>% 
+        drop_na() %>%
+        group_by(period) %>% 
+        summarise(population = sum(population), death_num = sum(death_num)) %>%
+        mutate(death_rate = death_num/population*100000, group = "United States") %>%
+        select(period, death_rate, group)
+      
+      nation_begin <- nation_data[nation_data$period=="2000-2002",]$death_rate
+      nation_end <- nation_data[nation_data$period=="2015-2017",]$death_rate
+      nation_hi <- max(nation_begin, nation_end)
+      nation_lo <- min(nation_begin, nation_end)
+      hi <- max(nation_data$death_rate)
+      lo <- min(nation_data$death_rate)
+      range <- hi - lo
+      
+      line_plot <- ggplot(
+        nation_data,
+        aes(
+          x = period, y = death_rate, 
+          group = group, color = color
+        )
+      ) + 
+        geom_line(size = 1.5, color = theme.cat.accent.color()) + 
+        geom_point(color = "#565254", shape = 21, fill = "#f7f7f7", size = 2) + 
+        theme.line.mort() + 
+        theme(legend.position = "bottom", legend.title = element_blank()) + 
+        ylab("Midlife deaths per 100,000") + 
+        geom_segment(aes(x=period_choice, xend=period_choice, y=lo, yend=hi), color = '#38761D', linetype=2) +
+        geom_polygon(data = data.frame(
+          x = c(period_choice-0.1, period_choice+0.1, period_choice, period_choice-0.1), 
+          y = c(hi+range*0.1, hi+range*0.1, hi, hi+range*0.1)), 
+          aes(x = x, y = y), inherit.aes = FALSE, fill = '#38761D')
+      
+      nation_data <- nation_data %>% 
+        mutate(label = "") %>% 
+        rename(x = period)
+      label_data <- generate_label_data_single(nation_data, "United States", nation_begin, nation_end, 1, v*nation_lo+u*nation_hi,calc$state_choice)
+      label_data <- add_reference_point_single(label_data, nation_begin, nation_end, 1, "United States")
+      line_plot <- draw_reference_single(line_plot, nation_begin, nation_end, 1, nation_end)
+      line_plot <-line_plot +
+        coord_cartesian(clip = "off") +
+        geom_label_repel(data = label_data, mapping = aes(x = x, y = death_rate, label = label), 
+                         fill = theme.cat.accent.color(),
+                         inherit.aes = FALSE,
+                         segment.colour = "#565254",
+                         color = "#f7f7f7",
+                         #hjust = "inward", vjust = "inward",
+                         #point.padding = 0.5,
+                         direction = "both",
+                         xlim = c(1.5, 5.5),
+                         show.legend = FALSE)
+      
+    } else {
+      state_data <- dplyr::filter(
+        cdc.data,
+        state_abbr == calc$state_choice,
+        death_cause == calc$death_cause
+      ) %>% 
+        drop_na() %>%
+        group_by(period) %>% 
+        summarise(population = sum(population), death_num = sum(death_num)) %>%
+        mutate(death_rate = death_num/population*100000, group = calc$state_choice) %>%
+        select(period, death_rate, group)
+      
+      state_begin <- state_data[state_data$period=="2000-2002",]$death_rate
+      state_end <- state_data[state_data$period=="2015-2017",]$death_rate
+      state_hi <- max(state_begin, state_end)
+      state_lo <- min(state_begin, state_end)
+      
+      
+      nation_data <- dplyr::filter(
+        cdc.data,
+        death_cause == calc$death_cause
+      ) %>% 
+        drop_na() %>%
+        group_by(period) %>% 
+        summarise(population = sum(population), death_num = sum(death_num)) %>%
+        mutate(death_rate = death_num/population*100000, group = "United States") %>%
+        select(period, death_rate, group)
+      
+      nation_begin <- nation_data[nation_data$period=="2000-2002",]$death_rate
+      nation_end <- nation_data[nation_data$period=="2015-2017",]$death_rate
+      nation_hi <- max(nation_begin, nation_end)
+      nation_lo <- min(nation_begin, nation_end)
+      
+      data <- bind_rows(state_data, nation_data)
+      hi <- max(data$death_rate)
+      lo <- min(data$death_rate)
+      range <- hi - lo 
+      ylim <- c(lo - 0.1 * range, hi + 0.1 * range)
+      
+      colors <- c("placeholder" = '#D95F02', "United States"=theme.cat.accent.color())
+      names(colors) <- c(calc$state_choice, "United States")
+      
+      line_plot <- ggplot(
+        data,
+        aes(
+          x = period, y = death_rate, 
+          color = group, group = group
+        )
+      ) + 
+        geom_line(size = 1.5) +
+        geom_point(color = "#565254", shape = 21, fill = "#f7f7f7", size = 2) + 
+        theme.line.mort() + 
+        theme(legend.position = "bottom", legend.title = element_blank()) + 
+        ylab("Midlife deaths per 100,000") +
+        ylim(ylim) + 
+        scale_color_manual(values = colors) + 
+        geom_segment(aes(x=period_choice, xend=period_choice, y=lo, yend=hi), color = '#38761D', linetype=2) +
+        geom_polygon(data = data.frame(
+          x = c(period_choice-0.1, period_choice+0.1, period_choice, period_choice-0.1), 
+          y = c(hi+range*0.1, hi+range*0.1, hi, hi+range*0.1)), 
+          aes(x = x, y = y), inherit.aes = FALSE, fill = '#38761D')
+      
+      if (xor(nation_end < state_end, state_end < state_begin)){
+        label_data <- generate_label_data(state_data, nation_data, state_begin, state_end, nation_begin, nation_end,
+                                          1, u*state_hi+v*state_lo, 6, u*nation_lo+v*nation_hi, calc$state_choice)
+        label_data <- add_reference_point(label_data, state_begin, state_end, nation_begin, nation_end)
+        line_plot <- draw_reference(line_plot, state_begin, state_end, nation_begin, nation_end)
+      } else {
+        label_data <- generate_label_data(state_data, nation_data, state_begin, state_end, nation_begin, nation_end, 
+                                          6, v*state_hi+u*state_lo, 1, v*nation_lo+u*nation_hi, calc$state_choice)
+        label_data <- add_reference_point(label_data, nation_begin, nation_end, state_begin, state_end)
+        line_plot <- draw_reference(line_plot, nation_begin, nation_end, state_begin, state_end)
+      }
+      
+      line_plot <- line_plot +
+        coord_cartesian(clip = "off") +
+        geom_label_repel(data = label_data, 
+                         mapping = aes(x = x, y = death_rate, label = label, fill = group),
+                         segment.colour = "#565254",
+                         color = "#f7f7f7",
+                         inherit.aes = FALSE,
+                         #hjust = "inward", vjust = "inward",
+                         #point.padding = 0.5,
+                         direction = "both",
+                         xlim = c(1.5, 5.5),
+                         ylim = ylim,
+                         show.legend = FALSE) + 
+        scale_fill_manual(values = colors)
+      
+      #geom_point(data = label_data, mapping = aes(x = x, y = death_rate), color = '#565254')
+    }
+    assign("page1_infographic", line_plot, envir = .GlobalEnv)
+    line_plot
+  }, bg="transparent")
+}
+
+  # Gives information about county population and urbanness
+serv_out[["county_desc"]] <- function(calc, session) {
+  renderUI({
+    
+    # when app starts up there is initially no selection
+    if (is.null(calc$county_drop_choice)) {
+      return()
+    }
+    
+    county.data.00.02 <- dplyr::filter(
+      cdc.data,
+      county_name == calc$county_drop_choice,
+      death_cause == calc$death_cause,
+      state_abbr == calc$state_choice,
+      period == "2000-2002",
+      is.na(death_rate)
+    )
+    county.data.15.17 <- dplyr::filter(
+      cdc.data,
+      county_name == calc$county_drop_choice,
+      death_cause == calc$death_cause,
+      state_abbr == calc$state_choice,
+      period == "2015-2017",
+      is.na(death_rate)
+    )
+    
+    if (nrow(county.data.15.17) == 0 | nrow(county.data.00.02) == 0) {
+      return(
+        tagList(
+          tags$h5(paste0(
+            "Data estimated for ", calc$county_drop_choice, ", ", calc$state_choice, ".")
+          )
+        )
+      )
+    }
+    
+    # pop change
+    pop.00.02 <- county.data.00.02$population
+    pop.15.17 <- county.data.15.17$population
+    
+    pop.change.text <- "Population has remained relatively constant since 2002"
+    
+    if (pop.00.02 > pop.15.17) {
+      pop.change.text <- paste0("Population fell by ", 
+                                formatC(pop.00.02 - pop.15.17, format="d", big.mark=","),
+                                " (",
+                                round((pop.00.02 - pop.15.17) / pop.00.02 * 100, 2),
+                                "%) from 2002 to 2017")
+    }
+    if (pop.00.02 < pop.15.17) {
+      pop.change.text <- paste0("Population rose by ",
+                                formatC(pop.15.17 - pop.00.02, format="d", big.mark=","),
+                                " (",
+                                round((pop.15.17 - pop.00.02) / pop.00.02 * 100, 2),
+                                "%) from 2002 to 2017")
+    }
+    
+    # death rate change
+    dr.00.02 <- county.data.00.02$death_rate
+    dr.15.17 <- county.data.15.17$death_rate
+    
+    dr.change.text <- paste0("For ", county.data.15.17$county_name, " County, the ", tolower(calc$death_cause), 
+                             " mortality rate has remained relatively constant since 2002 at ",
+                             round(dr.15.17, 2),
+                             "per 100k people")
+    
+    if (dr.00.02 > dr.15.17) {
+      dr.change.text <- paste0("For ", county.data.15.17$county_name, " County, the ", tolower(calc$death_cause), 
+                               " mortality rate fell by ",
+                               round((dr.00.02 - dr.15.17) / dr.00.02 * 100, 2),
+                               "% from 2002 to 2017 from ",
+                               round(dr.00.02, 2), " to ",  round(dr.15.17, 2))
+    }
+    if (dr.00.02 < dr.15.17) {
+      dr.change.text <- paste0("For ", county.data.15.17$county_name, " County, the ", tolower(calc$death_cause), 
+                               " mortality rate rose by ",
+                               round((dr.15.17 - dr.00.02) / dr.00.02 * 100, 2),
+                               "% from 2002 to 2017 from ",
+                               round(dr.00.02, 2), " to ",  round(dr.15.17, 2))
+    }
+    
+    return(
+      tagList(
+        # tags$h5(paste0(
+        #   county.data.15.17$county_name, ", ", county.data.15.17$state_abbr,
+        #   " is a ", tolower(county.data.15.17$urban_2013), " area with a population of ",
+        #   formatC(pop.15.17, format="d", big.mark=","))
+        # ),
+        # tags$h5(pop.change.text),
+        # TODO: Add determinant change!
+        tags$h5(dr.change.text)
+      )
+    )
+  })
+}
+  
 # ----------------------------------------------------------------------
 #   # Functions for data download
 #   
