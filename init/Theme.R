@@ -644,6 +644,9 @@ geo.us.plot <- function(death.cause, period) {
   if (death.cause == "Cardiovascular") {
     death.cause = "Cardio"
   }
+  if (death.cause == "All Cause") {
+    death.cause = "All_Cause"
+  }
   
   switch(period,
          "2000-2002" = {
