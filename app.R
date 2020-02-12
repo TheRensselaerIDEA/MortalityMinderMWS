@@ -532,7 +532,7 @@ ui_list[["Page4"]] <- fluidPage(
       ),
       fluidRow(
         class = "page page4",
-        column(4, tags$h4(paste("About Mortality Minder 69"),align="center"),
+        column(4, tags$h4(paste("About Mortality Minder"),align="center"),
                fluidRow(
                  column(11, 
                         HTML("<h5>The goal of MortalityMinder (MM)  is to enable healthcare researchers, providers, 
